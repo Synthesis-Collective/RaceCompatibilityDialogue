@@ -5,6 +5,7 @@ using Mutagen.Bethesda;
 using Mutagen.Bethesda.Synthesis;
 using Mutagen.Bethesda.Skyrim;
 using System.Threading.Tasks;
+using Mutagen.Bethesda.FormKeys.SkyrimSE;
 
 namespace RaceCompatibilityDialogue
 {
@@ -24,21 +25,19 @@ namespace RaceCompatibilityDialogue
                 });
         }
 
-        public static readonly ModKey skyrimEsm = Constants.Skyrim;
-
         public static readonly ModKey raceCompatibilityEsm = new ModKey("RaceCompatibility", ModType.Master);
 
         public static readonly Dictionary<FormKey, FormKey> vanillaRaceToActorProxyKeywords = new Dictionary<FormKey, FormKey>{
-            { new FormKey(skyrimEsm, 0x013740), new FormKey(raceCompatibilityEsm, 0x001D8B) }, // Argonian
-            { new FormKey(skyrimEsm, 0x013741), new FormKey(raceCompatibilityEsm, 0x001D8A) }, // Breton
-            { new FormKey(skyrimEsm, 0x013742), new FormKey(raceCompatibilityEsm, 0x001D8F) }, // DarkElf
-            { new FormKey(skyrimEsm, 0x013743), new FormKey(raceCompatibilityEsm, 0x001D8E) }, // HighElf
-            { new FormKey(skyrimEsm, 0x013744), new FormKey(raceCompatibilityEsm, 0x001D90) }, // Imperial
-            { new FormKey(skyrimEsm, 0x013745), new FormKey(raceCompatibilityEsm, 0x001D8C) }, // Khajit
-            { new FormKey(skyrimEsm, 0x013746), new FormKey(raceCompatibilityEsm, 0x001D93) }, // Nord
-            { new FormKey(skyrimEsm, 0x013747), new FormKey(raceCompatibilityEsm, 0x001D8D) }, // Orc
-            { new FormKey(skyrimEsm, 0x013748), new FormKey(raceCompatibilityEsm, 0x001D91) }, // Redguard
-            { new FormKey(skyrimEsm, 0x013749), new FormKey(raceCompatibilityEsm, 0x001D92) }, // WoodElf
+            { Skyrim.Race.ArgonianRace, new FormKey(raceCompatibilityEsm, 0x001D8B) }, // Argonian
+            { Skyrim.Race.BretonRace, new FormKey(raceCompatibilityEsm, 0x001D8A) }, // Breton
+            { Skyrim.Race.DarkElfRace, new FormKey(raceCompatibilityEsm, 0x001D8F) }, // DarkElf
+            { Skyrim.Race.HighElfRace, new FormKey(raceCompatibilityEsm, 0x001D8E) }, // HighElf
+            { Skyrim.Race.ImperialRace, new FormKey(raceCompatibilityEsm, 0x001D90) }, // Imperial
+            { Skyrim.Race.KhajiitRace, new FormKey(raceCompatibilityEsm, 0x001D8C) }, // Khajit
+            { Skyrim.Race.NordRace, new FormKey(raceCompatibilityEsm, 0x001D93) }, // Nord
+            { Skyrim.Race.OrcRace, new FormKey(raceCompatibilityEsm, 0x001D8D) }, // Orc
+            { Skyrim.Race.RedguardRace, new FormKey(raceCompatibilityEsm, 0x001D91) }, // Redguard
+            { Skyrim.Race.WoodElfRace, new FormKey(raceCompatibilityEsm, 0x001D92) }, // WoodElf
         };
 
         public static readonly HashSet<FormKey> actorProxyKeywords = new HashSet<FormKey>(vanillaRaceToActorProxyKeywords.Values);
@@ -97,7 +96,7 @@ namespace RaceCompatibilityDialogue
                     newData.Function = (int)ConditionData.Function.HasKeyword;
                     newData.ParameterOneRecord = vanillaRaceToActorProxyKeywords[data.ParameterOneRecord.FormKey];
 
-                    newData.DeepCopyIn(data,new FunctionConditionData.TranslationMask(defaultOn: true){
+                    newData.DeepCopyIn(data, new FunctionConditionData.TranslationMask(defaultOn: true){
                         Function = false,
                         ParameterOneRecord = false
                     });
