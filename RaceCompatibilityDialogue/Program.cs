@@ -44,22 +44,28 @@ namespace RaceCompatibilityDialogue
 
         public static void RunPatch(IPatcherState<ISkyrimMod, ISkyrimModGetter> state)
         {
-            bool isConditionOnPlayerRace(IFunctionConditionDataGetter x) {
-                return x.Function == (int)ConditionData.Function.GetIsRace
-                        && vanillaRaceToActorProxyKeywords.ContainsKey(x.ParameterOneRecord.FormKey);
+            var functionsOfInterest = new HashSet<ConditionData.Function>() { ConditionData.Function.GetIsRace, ConditionData.Function.GetPCIsRace };
+
+            bool isConditionOnPlayerRace(IFunctionConditionDataGetter x)
+            {
+                return functionsOfInterest.Contains((ConditionData.Function)x.Function)
+                    && vanillaRaceToActorProxyKeywords.ContainsKey(x.ParameterOneRecord.FormKey);
             }
 
-            bool isConditionOnPlayerRaceProxyKeyword(IFunctionConditionDataGetter x) {
+            bool isConditionOnPlayerRaceProxyKeyword(IFunctionConditionDataGetter x)
+            {
                 return x.Function == (int)ConditionData.Function.HasKeyword
-                        && actorProxyKeywords.Contains(x.ParameterOneRecord.FormKey);
+                    && actorProxyKeywords.Contains(x.ParameterOneRecord.FormKey);
             }
 
-            bool isVictim(IDialogResponsesGetter x) {
+            bool isVictim(IDialogResponsesGetter x)
+            {
                 bool ok = false;
                 foreach (var data in x.Conditions
                     .OfType<IConditionFloatGetter>()
                     .Select(x => x.Data)
-                    .OfType<IFunctionConditionDataGetter>()) {
+                    .OfType<IFunctionConditionDataGetter>())
+                {
                     if (!ok && isConditionOnPlayerRace(data))
                         ok = true;
                     if (isConditionOnPlayerRaceProxyKeyword(data))
@@ -68,11 +74,18 @@ namespace RaceCompatibilityDialogue
                 return ok;
             }
 
+            int responseCounter = 0;
+            var dialogueSet = new HashSet<FormKey>();
+
             foreach (var item in state.LoadOrder.PriorityOrder.DialogResponses().WinningContextOverrides(state.LinkCache))
             {
                 if (!isVictim(item.Record)) continue;
 
                 var response = item.GetOrAddAsOverride(state.PatchMod);
+
+                responseCounter++;
+
+                if (item.Parent != null && item.Parent.Record is IDialogTopicGetter getter) dialogueSet.Add(getter.FormKey);
 
                 for (var i = response.Conditions.Count - 1; i >= 0; i--)
                 {
@@ -85,27 +98,56 @@ namespace RaceCompatibilityDialogue
                     if (!isConditionOnPlayerRace(data)) continue;
 
                     var newCondition = new ConditionFloat();
-                    newCondition.DeepCopyIn(condition, new Condition.TranslationMask(defaultOn: true){
+                    newCondition.DeepCopyIn(condition, new Condition.TranslationMask(defaultOn: true)
+                    {
                         Unknown1 = false
                     });
 
-                    condition.Flags |= Condition.Flag.OR;
+                    switch (condition.CompareOperator)
+                    {
+                        case CompareOperator.EqualTo:
+                            if (condition.ComparisonValue == 0)
+                                newCondition.Flags = condition.Flags | Condition.Flag.OR;
+                            break;
+                        case CompareOperator.NotEqualTo:
+                            if (condition.ComparisonValue == 1)
+                                newCondition.Flags = condition.Flags | Condition.Flag.OR;
+                            break;
+                        case CompareOperator.GreaterThan:
+                        case CompareOperator.LessThan:
+                        case CompareOperator.GreaterThanOrEqualTo:
+                        case CompareOperator.LessThanOrEqualTo:
+                            Console.WriteLine($"TODO not sure how to handle condition in {item.Record.FormKey}");
+                            continue;
+                    }
 
-                    var newData = new FunctionConditionData();
+                    var newData = new FunctionConditionData
+                    {
+                        Function = (int)ConditionData.Function.HasKeyword,
+                        ParameterOneRecord = vanillaRaceToActorProxyKeywords[data.ParameterOneRecord.FormKey]
+                    };
 
-                    newData.Function = (int)ConditionData.Function.HasKeyword;
-                    newData.ParameterOneRecord = vanillaRaceToActorProxyKeywords[data.ParameterOneRecord.FormKey];
-
-                    newData.DeepCopyIn(data, new FunctionConditionData.TranslationMask(defaultOn: true){
+                    newData.DeepCopyIn(data, new FunctionConditionData.TranslationMask(defaultOn: true)
+                    {
                         Function = false,
                         ParameterOneRecord = false
                     });
+
+                    if ((ConditionData.Function)data.Function == ConditionData.Function.GetPCIsRace)
+                    {
+                        newData.Unknown3 = (int)Condition.RunOnType.Reference;
+                        newData.Unknown4 = 0x14; // PlayerRef [PLYR:000014]
+                    }
 
                     newCondition.Data = newData;
 
                     response.Conditions.Insert(i, newCondition);
                 }
             }
+
+            int dialogueCounter = dialogueSet.Count;
+
+            Console.WriteLine($"Modified {responseCounter} responses to {dialogueCounter} dialogue topics.");
         }
     }
 }
