@@ -1,9 +1,9 @@
 {
   "Nickname": "RaceCompatibilityDialogue",
-  "Visibility": "Exclude",
-  "OneLineDescription": "",
-  "LongDescription": "",
-  "PreferredAutoVersioning": "Default",
+  "Visibility": "Visible",
+  "OneLineDescription": "Adds dialog conditions for custom races.",
+  "LongDescription": "Adds dialog conditions for custom races (supported by RaceCompatability.esm).\r\n\r\nBased on Race Compatibility Dialogue SSE",
+  "PreferredAutoVersioning": "LatestTag",
   "RequiredMods": [
     "RaceCompatibility.esm"
   ]

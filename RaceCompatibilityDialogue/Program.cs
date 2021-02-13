@@ -83,17 +83,17 @@ namespace RaceCompatibilityDialogue
 
                 var response = item.GetOrAddAsOverride(state.PatchMod);
 
+                //Console.WriteLine(response.FormKey);
+
                 responseCounter++;
 
-                if (item.Parent != null && item.Parent.Record is IDialogTopicGetter getter) dialogueSet.Add(getter.FormKey);
+                if (item.Parent?.Record is IDialogTopicGetter getter) dialogueSet.Add(getter.FormKey);
 
                 for (var i = response.Conditions.Count - 1; i >= 0; i--)
                 {
-                    if (!(response.Conditions[i] is ConditionFloat)) continue;
-                    ConditionFloat condition = (ConditionFloat)response.Conditions[i];
+                    if (response.Conditions[i] is not ConditionFloat condition) continue;
 
-                    if (!(condition.Data is FunctionConditionData)) continue;
-                    FunctionConditionData data = (FunctionConditionData)condition.Data;
+                    if (condition.Data is not FunctionConditionData data) continue;
 
                     if (!isConditionOnPlayerRace(data)) continue;
 
@@ -123,7 +123,7 @@ namespace RaceCompatibilityDialogue
 
                     var newData = new FunctionConditionData
                     {
-                        Function = (int)ConditionData.Function.HasKeyword,
+                        Function = (ushort)ConditionData.Function.HasKeyword,
                         ParameterOneRecord = vanillaRaceToActorProxyKeywords[data.ParameterOneRecord.FormKey]
                     };
 
@@ -133,10 +133,10 @@ namespace RaceCompatibilityDialogue
                         ParameterOneRecord = false
                     });
 
-                    if ((ConditionData.Function)data.Function == ConditionData.Function.GetPCIsRace)
+                    if ((ConditionData.Function)data.Function is ConditionData.Function.GetPCIsRace)
                     {
                         newData.Unknown3 = (int)Condition.RunOnType.Reference;
-                        newData.Unknown4 = 0x14; // PlayerRef [PLYR:000014]
+                        newData.Unknown4 = 0x00000014; // PlayerRef [PLYR:000014]
                     }
 
                     newCondition.Data = newData;
