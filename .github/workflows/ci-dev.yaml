@@ -32,7 +32,7 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         name: test-coverage-report
-        path: ${{ github.workspace }}/**/coverage.info
+        path: "**/coverage.info"
 
   todo:
     needs: [ build ]
@@ -55,11 +55,9 @@ jobs:
       uses: actions/download-artifact@v2
       with:
         name: test-coverage-report
-    - name: where did those files go?
-      run: find . -type f -name coverage.info
     - name: Publish code coverage
       uses: paambaati/codeclimate-action@v2.7.3
       env:
         CC_TEST_REPORTER_ID: ${{ secrets.CC_TEST_REPORTER_ID }}
       with:
-        coverageLocations: ${{ github.workspace }}/**/coverage.info:lcov
+        coverageLocations: "**/coverage.info:lcov"
