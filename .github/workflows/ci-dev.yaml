@@ -56,7 +56,7 @@ jobs:
       with:
         name: test-coverage-report
     - name: List fetched coverage ouput
-      run: Get-ChildItem -Filter 'coverage.info' -Recurse $pwd
+      run: find . -type f -name 'coverage.info'
     - name: Publish code coverage
       uses: paambaati/codeclimate-action@v2.7.3
       env:
