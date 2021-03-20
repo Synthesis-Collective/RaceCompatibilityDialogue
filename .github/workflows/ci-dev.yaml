@@ -7,7 +7,21 @@ on:
     branches: [ dev ]
 
 jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Setup .NET Core
+      uses: actions/setup-dotnet@v1
+    - name: Install dependencies
+      run: dotnet restore
+    - name: Build
+      run: dotnet build -c Release --no-restore
+    - name: Test
+      run: dotnet test -c Release --no-build
+
   todo:
+    needs: [ build ]
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
@@ -19,8 +33,9 @@ jobs:
         TOKEN: ${{ secrets.GITHUB_TOKEN }}
         CLOSE_ISSUES: false
 
-  build:
-    runs-on: windows-latest
+  coverage:
+    needs: [ build ]
+    runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
     - name: Setup .NET Core
