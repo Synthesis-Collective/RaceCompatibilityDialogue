@@ -32,7 +32,7 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         name: test-coverage-report
-        path: "**/coverage.info"
+        path: "*/coverage.info"
 
   todo:
     needs: [ build ]
@@ -62,5 +62,4 @@ jobs:
       env:
         CC_TEST_REPORTER_ID: ${{ secrets.CC_TEST_REPORTER_ID }}
       with:
-        coverageLocations: |
-          ${{ github.workspace }}/**/coverage.info:lcov
+        coverageLocations: "*/coverage.info:lcov"
