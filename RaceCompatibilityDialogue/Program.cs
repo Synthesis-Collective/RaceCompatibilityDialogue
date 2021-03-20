@@ -14,13 +14,12 @@ namespace RaceCompatibilityDialogue
         public static async Task<int> Main(string[] args)
         {
             return await SynthesisPipeline.Instance
-                .AddPatch<ISkyrimMod, ISkyrimModGetter>(RunPatch)
                 .SetTypicalOpen(GameRelease.SkyrimSE, "RaceCompatibilityDialogue.esp")
+                .AddPatch<ISkyrimMod, ISkyrimModGetter>(RunPatch)
                 .Run(args);
         }
 
-        public static readonly Dictionary<FormLink<IRaceGetter>, FormLink<IKeywordGetter>> vanillaRaceToActorProxyKeywords = new()
-        {
+        public static readonly Dictionary<IFormLinkGetter<IRaceGetter>, IFormLinkGetter<IKeywordGetter>> vanillaRaceToActorProxyKeywords = new (){
             { Skyrim.Race.ArgonianRace, RaceCompatibility.Keyword.ActorProxyArgonian },
             { Skyrim.Race.BretonRace, RaceCompatibility.Keyword.ActorProxyBreton },
             { Skyrim.Race.DarkElfRace, RaceCompatibility.Keyword.ActorProxyDarkElf },
@@ -33,9 +32,7 @@ namespace RaceCompatibilityDialogue
             { Skyrim.Race.WoodElfRace, RaceCompatibility.Keyword.ActorProxyWoodElf },
         };
 
-        public static readonly HashSet<FormLink<IKeywordGetter>> actorProxyKeywords = new(vanillaRaceToActorProxyKeywords.Values);
-
-        public static readonly FormLink<ISkyrimMajorRecordGetter> PlayerRef = Constants.Player;
+        public static readonly HashSet<IFormLinkGetter<IKeywordGetter>> actorProxyKeywords = new(vanillaRaceToActorProxyKeywords.Values);
 
         public static readonly HashSet<ConditionData.Function> functionsOfInterest = new()
         {
@@ -110,7 +107,7 @@ namespace RaceCompatibilityDialogue
                 var newData = new FunctionConditionData
                 {
                     Function = (ushort)ConditionData.Function.HasKeyword,
-                    ParameterOneRecord = vanillaRaceToActorProxyKeywords[data.ParameterOneRecord.FormKey]
+                    ParameterOneRecord = vanillaRaceToActorProxyKeywords[data.ParameterOneRecord.Cast<IRaceGetter>()].AsSetter()
                 };
 
                 newData.DeepCopyIn(data, new FunctionConditionData.TranslationMask(defaultOn: true)
@@ -122,7 +119,7 @@ namespace RaceCompatibilityDialogue
                 if ((ConditionData.Function)data.Function is ConditionData.Function.GetPCIsRace)
                 {
                     newData.RunOnType = Condition.RunOnType.Reference;
-                    newData.Reference = PlayerRef;
+                    newData.Reference.SetTo(Constants.Player);
                 }
 
                 newCondition.Data = newData;
@@ -145,10 +142,10 @@ namespace RaceCompatibilityDialogue
         };
 
         public static bool IsConditionOnPlayerRace(IFunctionConditionDataGetter x) => functionsOfInterest.Contains((ConditionData.Function)x.Function)
-                && vanillaRaceToActorProxyKeywords.ContainsKey(x.ParameterOneRecord.FormKey);
+                && vanillaRaceToActorProxyKeywords.ContainsKey(x.ParameterOneRecord.Cast<IRaceGetter>());
 
         public static bool IsConditionOnPlayerRaceProxyKeyword(IFunctionConditionDataGetter x) => x.Function == (int)ConditionData.Function.HasKeyword
-                && actorProxyKeywords.Contains(x.ParameterOneRecord.FormKey);
+                && actorProxyKeywords.Contains(x.ParameterOneRecord);
 
         public static bool IsVictim(IDialogResponsesGetter x)
         {
