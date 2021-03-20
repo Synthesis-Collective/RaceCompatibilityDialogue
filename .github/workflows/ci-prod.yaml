@@ -12,12 +12,10 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: "TODO to Issue"
-      uses: actions/setup-dotnet@v1
-    - name: Install dependencies
       uses: "alstr/todo-to-issue-action@v2.4.1"
       id: "todo"
       with:
-        COMMENT_MARKER: "\\\\"
+        COMMENT_MARKER: "//"
         TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   build:
