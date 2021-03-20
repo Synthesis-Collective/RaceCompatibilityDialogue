@@ -30,7 +30,7 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         name: test-coverage-report
-        path: "*/coverage.cobertura.xml"
+        path: "**/coverage.cobertura.xml"
 
   todo:
     needs: [ build ]
@@ -59,4 +59,4 @@ jobs:
       env:
         CC_TEST_REPORTER_ID: ${{ secrets.CC_TEST_REPORTER_ID }}
       with:
-        coverageLocations: "*/coverage.cobertura.xml:cobertura"
+        coverageLocations: "**/coverage.cobertura.xml:cobertura"
