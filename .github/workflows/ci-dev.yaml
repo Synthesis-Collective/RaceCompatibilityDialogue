@@ -26,8 +26,6 @@ jobs:
       run: dotnet build -c Release --no-restore
     - name: Test
       run: dotnet test /p:CollectCoverage=true /p:CoverletOutputFormat=lcov /p:CoverletOutput=coverage -c Release --no-build
-    - name: List coverage ouput
-      run: Get-ChildItem -Filter 'coverage.info' -Recurse ${{ github.workspace }}
     - name: Save coverage output
       uses: actions/upload-artifact@v2
       with:
@@ -55,11 +53,9 @@ jobs:
       uses: actions/download-artifact@v2
       with:
         name: test-coverage-report
-    - name: List fetched coverage ouput
-      run: find ${{ github.workspace }} -type f -name 'coverage.info'
     - name: Publish code coverage
-      uses: paambaati/codeclimate-action@v2.7.3
+      uses: paambaati/codeclimate-action@v2.7.5
       env:
         CC_TEST_REPORTER_ID: ${{ secrets.CC_TEST_REPORTER_ID }}
       with:
-        coverageLocations: "./*/coverage.info:lcov"
+        coverageLocations: "*/coverage.info:lcov"
