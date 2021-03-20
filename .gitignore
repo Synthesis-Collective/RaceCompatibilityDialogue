@@ -355,3 +355,5 @@ MigrationBackup/
 
 .vscode/
 .editorconfig
+
+Tests/coverage.info
