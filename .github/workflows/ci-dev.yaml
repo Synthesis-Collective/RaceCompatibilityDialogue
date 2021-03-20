@@ -23,7 +23,8 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         name: build-results
-        path: *\bin\Release\net5.0\*.dll
+        path: |
+          *\bin\Release\net5.0\*.dll
         retention-days: 1
 
   todo:
