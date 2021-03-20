@@ -4,7 +4,7 @@ on:
   push:
     branches: [ dev ]
   pull_request:
-    branches: [ dev ]
+    branches: [ dev, main ]
 
 jobs:
   build:
@@ -19,6 +19,12 @@ jobs:
       run: dotnet build -c Release --no-restore
     - name: Test
       run: dotnet test -c Release --no-build
+    - name: Save artefacts for later
+      uses: actions/upload-artifact@v2
+      with:
+        name: build-results
+        path: *\bin\Release\net5.0\*.dll
+        retention-days: 1
 
   todo:
     needs: [ build ]
@@ -42,8 +48,10 @@ jobs:
       uses: actions/setup-dotnet@v1
     - name: Install dependencies
       run: dotnet restore
-    - name: Build
-      run: dotnet build -c Release --no-restore
+    - name: Save artefacts for later
+      uses: actions/download-artifact@v2
+      with:
+        name: build-results
     - name: Test
       run: dotnet test /p:CollectCoverage=true /p:CoverletOutputFormat=lcov /p:CoverletOutput=coverage -c Release --no-build
     - name: Publish code coverage
