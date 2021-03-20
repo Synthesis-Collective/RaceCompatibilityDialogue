@@ -25,12 +25,12 @@ jobs:
     - name: Build
       run: dotnet build -c Release --no-restore
     - name: Test
-      run: dotnet test /p:CollectCoverage=true /p:CoverletOutputFormat=lcov /p:CoverletOutput=coverage -c Release --no-build
+      run: dotnet test --collect:"XPlat Code Coverage" --settings coverlet.runsettings -c Release --no-build
     - name: Save coverage output
       uses: actions/upload-artifact@v2
       with:
         name: test-coverage-report
-        path: "*/coverage.info"
+        path: "*/coverage.cobertura.xml"
 
   todo:
     needs: [ build ]
@@ -59,4 +59,4 @@ jobs:
       env:
         CC_TEST_REPORTER_ID: ${{ secrets.CC_TEST_REPORTER_ID }}
       with:
-        coverageLocations: "*/coverage.info:lcov"
+        coverageLocations: "*/coverage.cobertura.xml:cobertura"
