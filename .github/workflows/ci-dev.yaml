@@ -27,7 +27,16 @@ jobs:
       uses: actions/setup-dotnet@v1
     - name: Install dependencies
       run: dotnet restore
+    - name: Install coverlet.console
+      run: dotnet tool install --global coverlet.console
+    - name: Install coverlet.msbuild
+      run: dotnet add package coverlet.msbuild
     - name: Build
       run: dotnet build -c Release --no-restore
     - name: Test
-      run: dotnet test -c Release --no-build
+      run: dotnet test /p:CollectCoverage=true /p:CoverletOutputFormat=lcov /p:CoverletOutput=coverage -c Release --no-build
+    - uses: paambaati/codeclimate-action@v2.2.4
+      env:
+        CC_TEST_REPORTER_ID: ${{secrets.CC_TEST_REPORTER_ID}}
+      with:
+        coverageLocations: ${{github.workspace}}/Tests/coverage.info:lcov
