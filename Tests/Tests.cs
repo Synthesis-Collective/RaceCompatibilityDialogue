@@ -72,7 +72,7 @@ namespace Tests
                 Data = new FunctionConditionData()
                 {
                     Function = (ushort)ConditionData.Function.HasKeyword,
-                    ParameterOneRecord = Program.vanillaRaceToActorProxyKeywords[race]
+                    ParameterOneRecord = Program.vanillaRaceToActorProxyKeywords[race].AsSetter()
                 }
             });
 
@@ -102,7 +102,7 @@ namespace Tests
                     Function = (ushort)ConditionData.Function.GetIsRace,
                     ParameterOneRecord = NordRace,
                     RunOnType = Condition.RunOnType.Reference,
-                    Reference = Program.PlayerRef
+                    Reference = Constants.Player.AsSetter()
                 }
             });
 
@@ -168,7 +168,7 @@ namespace Tests
             Assert.Equal((ushort)ConditionData.Function.HasKeyword, newConditionData.Function);
             Assert.Equal(NordRaceKeyword, newConditionData.ParameterOneRecord);
             Assert.Equal(Condition.RunOnType.Reference, newConditionData.RunOnType);
-            Assert.Equal(Program.PlayerRef, newConditionData.Reference);
+            Assert.Equal(Constants.Player, newConditionData.Reference);
         }
 
     }
