@@ -4,8 +4,7 @@
     <DataCollectors>
       <DataCollector friendlyName="XPlat code coverage">
         <Configuration>
-          <Format>cobertura</Format>
-          <DeterministicReport>true</DeterministicReport>
+          <Format>lcov</Format>
         </Configuration>
       </DataCollector>
     </DataCollectors>

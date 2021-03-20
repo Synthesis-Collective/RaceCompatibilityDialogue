@@ -25,12 +25,7 @@ jobs:
     - name: Build
       run: dotnet build -c Release --no-restore
     - name: Test
-      run: dotnet test --collect:"XPlat Code Coverage" --settings coverlet.runsettings -c Release --no-build
-    - name: Save coverage output
-      uses: actions/upload-artifact@v2
-      with:
-        name: test-coverage-report
-        path: "**/coverage.cobertura.xml"
+      run: dotnet test -c Release --no-build
 
   todo:
     needs: [ build ]
@@ -45,18 +40,29 @@ jobs:
         TOKEN: ${{ secrets.GITHUB_TOKEN }}
         CLOSE_ISSUES: false
 
-  upload-coverage:
+  coverage:
     needs: [ build ]
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
-    - name: Fetch coverage output
-      uses: actions/download-artifact@v2
+    - name: Setup .NET Core
+      uses: actions/setup-dotnet@v1
+    - name: Cache .NET dependencies
+      uses: actions/cache@v2
       with:
-        name: test-coverage-report
+        path: '~/.nuget/packages'
+        key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+        restore-keys: |
+          ${{ runner.os }}-nuget-
+    - name: Install dependencies
+      run: dotnet restore
+    - name: Build
+      run: dotnet build -c Release --no-restore
+    - name: Test
+      run: dotnet test --collect:"XPlat Code Coverage" --settings coverlet.runsettings -c Release --no-build
     - name: Publish code coverage
       uses: paambaati/codeclimate-action@v2.7.5
       env:
-        CC_TEST_REPORTER_ID: ${{ secrets.CC_TEST_REPORTER_ID }}
+        CC_TEST_REPORTER_ID: ${{secrets.CC_TEST_REPORTER_ID}}
       with:
-        coverageLocations: "**/coverage.cobertura.xml:cobertura"
+        coverageLocations: "**/coverage.info:lcov"
