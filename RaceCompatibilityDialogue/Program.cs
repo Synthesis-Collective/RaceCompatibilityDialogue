@@ -53,7 +53,7 @@ namespace RaceCompatibilityDialogue
 
                 responseCounter++;
 
-                if (item.Parent?.Record is IDialogTopicGetter getter) dialogueSet.Add((IFormLink<IDialogTopicGetter>)getter);
+                if (item.Parent?.Record is IDialogTopicGetter getter) dialogueSet.Add(getter.AsLink());
 
                 AdjustResponses(item.Record.FormKey, response);
             }
