@@ -54,7 +54,7 @@ namespace Tests
             {
                 Data = new FunctionConditionData()
                 {
-                    Function = (ushort)ConditionData.Function.GetIsRace,
+                    Function = Condition.Function.GetIsRace,
                     ParameterOneRecord = race
                 }
             });
@@ -71,7 +71,7 @@ namespace Tests
             {
                 Data = new FunctionConditionData()
                 {
-                    Function = (ushort)ConditionData.Function.HasKeyword,
+                    Function = Condition.Function.HasKeyword,
                     ParameterOneRecord = Program.vanillaRaceToActorProxyKeywords[race].AsSetter()
                 }
             });
@@ -99,7 +99,7 @@ namespace Tests
                 ComparisonValue = comparisonValue,
                 Data = new FunctionConditionData()
                 {
-                    Function = (ushort)ConditionData.Function.GetIsRace,
+                    Function = Condition.Function.GetIsRace,
                     ParameterOneRecord = NordRace,
                     RunOnType = Condition.RunOnType.Reference,
                     Reference = Constants.Player.AsSetter()
@@ -125,7 +125,7 @@ namespace Tests
             Assert.NotNull(newConditionData);
 
             Assert.Equal(compareOperator, newCondition.CompareOperator);
-            Assert.Equal((ushort)ConditionData.Function.HasKeyword, newConditionData.Function);
+            Assert.Equal(Condition.Function.HasKeyword, newConditionData.Function);
             Assert.Equal(NordRaceKeyword, newConditionData.ParameterOneRecord);
         }
 
@@ -141,7 +141,7 @@ namespace Tests
                 ComparisonValue = comparisonValue,
                 Data = new FunctionConditionData()
                 {
-                    Function = (ushort)ConditionData.Function.GetPCIsRace,
+                    Function = Condition.Function.GetPCIsRace,
                     ParameterOneRecord = NordRace
                 }
             });
@@ -165,7 +165,7 @@ namespace Tests
             Assert.NotNull(newConditionData);
 
             Assert.Equal(compareOperator, newCondition.CompareOperator);
-            Assert.Equal((ushort)ConditionData.Function.HasKeyword, newConditionData.Function);
+            Assert.Equal(Condition.Function.HasKeyword, newConditionData.Function);
             Assert.Equal(NordRaceKeyword, newConditionData.ParameterOneRecord);
             Assert.Equal(Condition.RunOnType.Reference, newConditionData.RunOnType);
             Assert.Equal(Constants.Player, newConditionData.Reference);
