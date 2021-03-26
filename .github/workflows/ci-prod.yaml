@@ -79,6 +79,6 @@ jobs:
           key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-node-
-      - run: npx semantic-release
+      - run: npx semantic-release@17
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
