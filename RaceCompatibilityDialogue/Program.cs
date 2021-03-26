@@ -34,10 +34,10 @@ namespace RaceCompatibilityDialogue
 
         public static readonly HashSet<IFormLinkGetter<IKeywordGetter>> actorProxyKeywords = new(vanillaRaceToActorProxyKeywords.Values);
 
-        public static readonly HashSet<ConditionData.Function> functionsOfInterest = new()
+        public static readonly HashSet<Condition.Function> functionsOfInterest = new()
         {
-            ConditionData.Function.GetIsRace,
-            ConditionData.Function.GetPCIsRace
+            Condition.Function.GetIsRace,
+            Condition.Function.GetPCIsRace
         };
 
         public static void RunPatch(IPatcherState<ISkyrimMod, ISkyrimModGetter> state)
@@ -106,7 +106,7 @@ namespace RaceCompatibilityDialogue
 
                 var newData = new FunctionConditionData
                 {
-                    Function = (ushort)ConditionData.Function.HasKeyword,
+                    Function = Condition.Function.HasKeyword,
                     ParameterOneRecord = vanillaRaceToActorProxyKeywords[data.ParameterOneRecord.Cast<IRaceGetter>()].AsSetter()
                 };
 
@@ -116,7 +116,7 @@ namespace RaceCompatibilityDialogue
                     ParameterOneRecord = false
                 });
 
-                if ((ConditionData.Function)data.Function is ConditionData.Function.GetPCIsRace)
+                if (data.Function is Condition.Function.GetPCIsRace)
                 {
                     newData.RunOnType = Condition.RunOnType.Reference;
                     newData.Reference.SetTo(Constants.Player);
@@ -141,10 +141,10 @@ namespace RaceCompatibilityDialogue
             (_, _) => null
         };
 
-        public static bool IsConditionOnPlayerRace(IFunctionConditionDataGetter x) => functionsOfInterest.Contains((ConditionData.Function)x.Function)
+        public static bool IsConditionOnPlayerRace(IFunctionConditionDataGetter x) => functionsOfInterest.Contains(x.Function)
                 && vanillaRaceToActorProxyKeywords.ContainsKey(x.ParameterOneRecord.Cast<IRaceGetter>());
 
-        public static bool IsConditionOnPlayerRaceProxyKeyword(IFunctionConditionDataGetter x) => x.Function == (int)ConditionData.Function.HasKeyword
+        public static bool IsConditionOnPlayerRaceProxyKeyword(IFunctionConditionDataGetter x) => x.Function == Condition.Function.HasKeyword
                 && actorProxyKeywords.Contains(x.ParameterOneRecord);
 
         public static bool IsVictim(IDialogResponsesGetter x)
