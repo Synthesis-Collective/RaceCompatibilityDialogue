@@ -1,12 +1,5 @@
 {
     "extends": [
         "config:base"
-    ],
-    "packageRules": [
-        {
-            "groupName": "Mutagen Packages",
-            "matchPackagePatterns": "^Mutagen\\.Bethesda",
-            "extends": [":semanticCommitTypeAll(chore)"]
-        }
     ]
 }
