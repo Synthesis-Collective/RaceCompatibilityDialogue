@@ -41,6 +41,19 @@ namespace RaceCompatibilityDialogue
             Condition.Function.GetPCIsRace
         };
 
+        public static readonly Dictionary<IFormLinkGetter<IRaceGetter>, IFormLinkGetter<IRaceGetter>> vampireRaceToRace = new()
+        {
+            { Skyrim.Race.ArgonianRaceVampire, Skyrim.Race.ArgonianRace },
+            { Skyrim.Race.BretonRaceVampire, Skyrim.Race.BretonRace },
+            { Skyrim.Race.DarkElfRaceVampire, Skyrim.Race.DarkElfRace },
+            { Skyrim.Race.HighElfRaceVampire, Skyrim.Race.HighElfRace },
+            { Skyrim.Race.KhajiitRaceVampire, Skyrim.Race.KhajiitRace },
+            { Skyrim.Race.NordRaceVampire, Skyrim.Race.NordRace },
+            { Skyrim.Race.OrcRaceVampire, Skyrim.Race.OrcRace },
+            { Skyrim.Race.RedguardRaceVampire, Skyrim.Race.RedguardRace },
+            { Skyrim.Race.WoodElfRaceVampire, Skyrim.Race.WoodElfRace }
+        };
+
         protected readonly LoadOrder<IModListing<ISkyrimModGetter>> LoadOrder;
         protected readonly ILinkCache<ISkyrimMod, ISkyrimModGetter> LinkCache;
         protected readonly ISkyrimMod PatchMod;
@@ -115,9 +128,15 @@ namespace RaceCompatibilityDialogue
 
         public static void AdjustConditions(List<List<Condition>> andList)
         {
+            Dictionary<IFormLinkGetter<IRaceGetter>, List<Condition>> isRace = new();
+            Dictionary<IFormLinkGetter<IRaceGetter>, List<Condition>> isNotRace = new();
+
             foreach (var orList in andList)
             {
                 List<Condition>? newConditions = null;
+
+                isRace.Clear();
+                isNotRace.Clear();
 
                 foreach (var item in orList)
                 {
@@ -127,6 +146,14 @@ namespace RaceCompatibilityDialogue
                     if (!IsConditionOnPlayerRace(data)) continue;
 
                     var race = data.ParameterOneRecord.Cast<IRaceGetter>();
+
+                    bool isVampireRace = vampireRaceToRace.TryGetValue(race, out var baseRace);
+                    baseRace ??= race;
+
+                    if (IsNot(condition))
+                        isNotRace.Add(race);
+                    else
+                        isRace.Add(race);
 
                     var newCondition = condition.DeepCopy();
                     (newConditions ??= new()).Add(newCondition);
@@ -150,10 +177,9 @@ namespace RaceCompatibilityDialogue
                 //
                 // potential solution:
                 //  * is race X or is race vampireX -> actorProxyX
-                    //  * is race X -> actorProxyX and not Vampire
-                    //  * is race vampireX -> actorProxyX and Vampire
+                //  * is race X -> actorProxyNonVampireX (new)
+                //  * is race vampireX -> actorProxyVampireX (new)
                 //  
-                    // var vampireKeyword = Skyrim.Keyword.Vampire
                 // labels: enhancement
 
                 if (newConditions != null)
@@ -169,7 +195,7 @@ namespace RaceCompatibilityDialogue
             }
         }
 
-        public static bool? MaybeOr(IConditionFloatGetter condition) => (condition.CompareOperator, condition.ComparisonValue) switch
+        public static bool IsNot(IConditionFloatGetter condition) => (condition.CompareOperator, condition.ComparisonValue) switch
         {
             (CompareOperator.EqualTo, 0) => true,
             (CompareOperator.LessThanOrEqualTo, 0) => true,
@@ -179,7 +205,7 @@ namespace RaceCompatibilityDialogue
             (CompareOperator.GreaterThanOrEqualTo, 1) => false,
             (CompareOperator.NotEqualTo, 0) => false,
             (CompareOperator.GreaterThan, 0) => false,
-            (_, _) => null
+            (_, _) => throw new ArgumentException("not boolean",nameof(condition))
         };
 
         public static bool IsBoolean(IConditionFloatGetter condition) => Enum.IsDefined(condition.CompareOperator) && (condition.ComparisonValue) switch { 0 or 1 => true, _ => false };
