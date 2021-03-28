@@ -19,7 +19,7 @@ namespace RaceCompatibilityDialogue
                 .Run(args);
         }
 
-        public static readonly Dictionary<IFormLinkGetter<IRaceGetter>, IFormLinkGetter<IKeywordGetter>> vanillaRaceToActorProxyKeywords = new()
+        public static readonly Dictionary<IFormLinkGetter<ISkyrimMajorRecordGetter>, IFormLinkGetter<IKeywordGetter>> vanillaRaceToActorProxyKeywords = new()
         {
             { Skyrim.Race.ArgonianRace, RaceCompatibility.Keyword.ActorProxyArgonian },
             { Skyrim.Race.BretonRace, RaceCompatibility.Keyword.ActorProxyBreton },
@@ -134,7 +134,7 @@ namespace RaceCompatibilityDialogue
                     var newData = (FunctionConditionData)newCondition.Data;
 
                     newData.Function = Condition.Function.HasKeyword;
-                    newData.ParameterOneRecord.SetTo(vanillaRaceToActorProxyKeywords[data.ParameterOneRecord.Cast<IRaceGetter>()]);
+                    newData.ParameterOneRecord.SetTo(vanillaRaceToActorProxyKeywords[data.ParameterOneRecord]);
 
                     if (data.Function is Condition.Function.GetPCIsRace)
                     {
@@ -150,10 +150,10 @@ namespace RaceCompatibilityDialogue
                 //
                 // potential solution:
                 //  * is race X or is race vampireX -> actorProxyX
-                //  * is race X -> actorProxyX and not Vampire
-                //  * is race vampireX -> actorProxyX and Vampire
+                    //  * is race X -> actorProxyX and not Vampire
+                    //  * is race vampireX -> actorProxyX and Vampire
                 //  
-                // var vampireKeyword = Skyrim.Keyword.Vampire
+                    // var vampireKeyword = Skyrim.Keyword.Vampire
                 // labels: enhancement
 
                 if (newConditions != null)
@@ -169,7 +169,7 @@ namespace RaceCompatibilityDialogue
         public static bool IsBoolean(IConditionFloatGetter condition) => Enum.IsDefined(condition.CompareOperator) && (condition.ComparisonValue) switch { 0 or 1 => true, _ => false };
 
         public static bool IsConditionOnPlayerRace(IFunctionConditionDataGetter x) => functionsOfInterest.Contains(x.Function)
-                && vanillaRaceToActorProxyKeywords.ContainsKey(x.ParameterOneRecord.Cast<IRaceGetter>());
+                && vanillaRaceToActorProxyKeywords.ContainsKey(x.ParameterOneRecord);
 
         public static bool IsConditionOnPlayerRaceProxyKeyword(IFunctionConditionDataGetter x) => x.Function == Condition.Function.HasKeyword
                 && actorProxyKeywords.Contains(x.ParameterOneRecord);
