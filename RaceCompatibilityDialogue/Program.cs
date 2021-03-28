@@ -150,22 +150,19 @@ namespace RaceCompatibilityDialogue
                 //
                 // potential solution:
                 //  * is race X or is race vampireX -> actorProxyX
-                    //  * is race X -> actorProxyX and not Vampire
-                    //  * is race vampireX -> actorProxyX and Vampire
+                //  * is race X -> actorProxyX and not Vampire
+                //  * is race vampireX -> actorProxyX and Vampire
                 //  
-                    // var vampireKeyword = Skyrim.Keyword.Vampire
+                // var vampireKeyword = Skyrim.Keyword.Vampire
                 // labels: enhancement
 
                 if (newConditions != null)
-                {
-                    orList[^1].Flags |= Condition.Flag.OR;
                     foreach (var newCondition in newConditions)
                     {
-                        newCondition.Flags |= Condition.Flag.OR;
+                        newCondition.Flags &= ~Condition.Flag.OR;
+                        orList[^1].Flags |= Condition.Flag.OR;
                         orList.Add(newCondition);
                     }
-                    orList[^1].Flags ^= Condition.Flag.OR;
-                }
             }
         }
 
