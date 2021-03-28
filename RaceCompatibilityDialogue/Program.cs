@@ -118,11 +118,11 @@ namespace RaceCompatibilityDialogue
             for (var i = andList.Count - 1; i >= 0; i--)
             {
                 var orList = andList[i];
-                // !race -> !keyword && !race
-                // race -> (keyword || race)
+                // !race -> !keyword & !race
+                // race -> (keyword | race)
 
-                // !race | x -> (!keyword | x) && (!race | x)
-                // race | x -> (keyword || race | x)
+                // !race | x -> (!keyword | x) & (!race | x)
+                // race | x -> (keyword | race | x)
                 for (var j = orList.Count - 1; j >= 0; j--)
                 {
                     if (orList[j] is not ConditionFloat condition) continue;
