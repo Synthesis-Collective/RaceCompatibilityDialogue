@@ -169,19 +169,6 @@ namespace RaceCompatibilityDialogue
             }
         }
 
-        public static bool? MaybeOr(IConditionFloatGetter condition) => (condition.CompareOperator, condition.ComparisonValue) switch
-        {
-            (CompareOperator.EqualTo, 0) => true,
-            (CompareOperator.LessThanOrEqualTo, 0) => true,
-            (CompareOperator.NotEqualTo, 1) => true,
-            (CompareOperator.LessThan, 1) => true,
-            (CompareOperator.EqualTo, 1) => false,
-            (CompareOperator.GreaterThanOrEqualTo, 1) => false,
-            (CompareOperator.NotEqualTo, 0) => false,
-            (CompareOperator.GreaterThan, 0) => false,
-            (_, _) => null
-        };
-
         public static bool IsBoolean(IConditionFloatGetter condition) => Enum.IsDefined(condition.CompareOperator) && (condition.ComparisonValue) switch { 0 or 1 => true, _ => false };
 
         public static bool IsConditionOnPlayerRace(IFunctionConditionDataGetter x) => functionsOfInterest.Contains(x.Function)
