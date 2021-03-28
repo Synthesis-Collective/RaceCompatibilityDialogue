@@ -87,6 +87,8 @@ namespace RaceCompatibilityDialogue
             {
                 if (response.Conditions[i] is not ConditionFloat condition) continue;
 
+                if (!IsBoolean(condition)) continue;
+
                 if (condition.Data is not FunctionConditionData data) continue;
 
                 if (!IsConditionOnPlayerRace(data)) continue;
@@ -159,6 +161,8 @@ namespace RaceCompatibilityDialogue
             (_, _) => null
         };
 
+        public static bool IsBoolean(IConditionFloatGetter condition) => Enum.IsDefined(condition.CompareOperator) && (condition.ComparisonValue) switch { 0 or 1 => true, _ => false };
+
         public static bool IsConditionOnPlayerRace(IFunctionConditionDataGetter x) => functionsOfInterest.Contains(x.Function)
                 && vanillaRaceToActorProxyKeywords.ContainsKey(x.ParameterOneRecord.Cast<IRaceGetter>());
 
@@ -170,6 +174,7 @@ namespace RaceCompatibilityDialogue
             bool ok = false;
             foreach (var data in x.Conditions
                 .OfType<IConditionFloatGetter>()
+                .Where(x => IsBoolean(x))
                 .Select(x => x.Data)
                 .OfType<IFunctionConditionDataGetter>())
             {

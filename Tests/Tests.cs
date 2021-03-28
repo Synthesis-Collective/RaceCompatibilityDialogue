@@ -247,5 +247,21 @@ namespace Tests
 
         }
 
+        [Theory]
+        [InlineData((CompareOperator)42, 0)]
+        [InlineData((CompareOperator)42, 1)]
+        [InlineData(CompareOperator.EqualTo, -1)]
+        [InlineData(CompareOperator.EqualTo, 0.5)]
+        [InlineData(CompareOperator.EqualTo, 2)]
+        public void TestInvalidBooleans(CompareOperator op, float value)
+        {
+            var condition = new ConditionFloat()
+            {
+                CompareOperator = op,
+                ComparisonValue = value
+            };
+
+            Assert.False(Program.IsBoolean(condition));
+        }
     }
 }
