@@ -19,7 +19,8 @@ namespace RaceCompatibilityDialogue
                 .Run(args);
         }
 
-        public static readonly Dictionary<IFormLinkGetter<IRaceGetter>, IFormLinkGetter<IKeywordGetter>> vanillaRaceToActorProxyKeywords = new (){
+        public static readonly Dictionary<IFormLinkGetter<IRaceGetter>, IFormLinkGetter<IKeywordGetter>> vanillaRaceToActorProxyKeywords = new()
+        {
             { Skyrim.Race.ArgonianRace, RaceCompatibility.Keyword.ActorProxyArgonian },
             { Skyrim.Race.BretonRace, RaceCompatibility.Keyword.ActorProxyBreton },
             { Skyrim.Race.DarkElfRace, RaceCompatibility.Keyword.ActorProxyDarkElf },
