@@ -126,35 +126,8 @@ namespace RaceCompatibilityDialogue
                     if (condition.Data is not FunctionConditionData data) continue;
                     if (!IsConditionOnPlayerRace(data)) continue;
 
-                    var race = data.ParameterOneRecord.Cast<IRaceGetter>();
-
-                    var newCondition = condition.DeepCopy();
-                    (newConditions ??= new()).Add(newCondition);
-
-                    var newData = (FunctionConditionData)newCondition.Data;
-
-                    newData.Function = Condition.Function.HasKeyword;
-                    newData.ParameterOneRecord.SetTo(vanillaRaceToActorProxyKeywords[data.ParameterOneRecord]);
-
-                    if (data.Function is Condition.Function.GetPCIsRace)
-                    {
-                        newData.RunOnType = Condition.RunOnType.Reference;
-                        newData.Reference.SetTo(Constants.Player);
-                    }
+                    (newConditions ??= new()).Add(MakeNewCondition(condition, data));
                 }
-
-                // TODO: Support is-x, is-vampire-x in addition to is-x-or-vampire-x (the existing keyword)
-                //
-                // current behaviour:
-                //  * is race X => is actorProxyX or race X
-                //
-                // potential solution:
-                //  * is race X or is race vampireX -> actorProxyX
-                    //  * is race X -> actorProxyX and not Vampire
-                    //  * is race vampireX -> actorProxyX and Vampire
-                //  
-                    // var vampireKeyword = Skyrim.Keyword.Vampire
-                // labels: enhancement
 
                 if (newConditions != null)
                     foreach (var newCondition in newConditions)
@@ -164,6 +137,25 @@ namespace RaceCompatibilityDialogue
                         orList.Add(newCondition);
                     }
             }
+        }
+
+        private static ConditionFloat MakeNewCondition(ConditionFloat condition, FunctionConditionData data)
+        {
+            var newCondition = condition.DeepCopy();
+
+            var newData = (FunctionConditionData)newCondition.Data;
+
+            newData.Function = Condition.Function.HasKeyword;
+
+            newData.ParameterOneRecord.SetTo(vanillaRaceToActorProxyKeywords[data.ParameterOneRecord]);
+
+            if (data.Function is Condition.Function.GetPCIsRace)
+            {
+                newData.RunOnType = Condition.RunOnType.Reference;
+                newData.Reference.SetTo(Constants.Player);
+            }
+
+            return newCondition;
         }
 
         public static bool IsBoolean(IConditionFloatGetter condition) => Enum.IsDefined(condition.CompareOperator) && (condition.ComparisonValue) switch { 0 or 1 => true, _ => false };
