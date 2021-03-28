@@ -112,17 +112,8 @@ namespace RaceCompatibilityDialogue
                     Unknown1 = false
                 });
 
-                switch (MaybeOr(condition.CompareOperator, condition.ComparisonValue))
-                {
-                    case true:
-                        newCondition.Flags = condition.Flags | Condition.Flag.OR;
-                        break;
-                    case false:
-                        break;
-                    case null:
-                        Console.WriteLine($"TODO not sure how to handle condition {i} in {formKey2}");
-                        continue;
-                }
+                if (MaybeOr(condition) == true)
+                    newCondition.Flags = condition.Flags | Condition.Flag.OR;
 
                 var newData = new FunctionConditionData
                 {
@@ -148,7 +139,7 @@ namespace RaceCompatibilityDialogue
             }
         }
 
-        private static bool? MaybeOr(CompareOperator op, float val) => (op, val) switch
+        public static bool? MaybeOr(IConditionFloatGetter condition) => (condition.CompareOperator, condition.ComparisonValue) switch
         {
             (CompareOperator.EqualTo, 0) => true,
             (CompareOperator.LessThanOrEqualTo, 0) => true,
