@@ -40,16 +40,34 @@ namespace RaceCompatibilityDialogue
             Condition.Function.GetPCIsRace
         };
 
+        protected readonly LoadOrder<IModListing<ISkyrimModGetter>> LoadOrder;
+        protected readonly ILinkCache<ISkyrimMod, ISkyrimModGetter> LinkCache;
+        protected readonly ISkyrimMod PatchMod;
+
+        public Program(LoadOrder<IModListing<ISkyrimModGetter>> loadOrder, ILinkCache<ISkyrimMod, ISkyrimModGetter> linkCache, ISkyrimMod patchMod)
+        {
+            LoadOrder = loadOrder;
+            LinkCache = linkCache;
+            PatchMod = patchMod;
+        }
+
         public static void RunPatch(IPatcherState<ISkyrimMod, ISkyrimModGetter> state)
+        {
+            var program = new Program(state.LoadOrder, state.LinkCache, state.PatchMod);
+
+            program.RunPatch();
+        }
+
+        public void RunPatch()
         {
             int responseCounter = 0;
             var dialogueSet = new HashSet<IFormLink<IDialogTopicGetter>>();
 
-            foreach (var item in state.LoadOrder.PriorityOrder.DialogResponses().WinningContextOverrides(state.LinkCache))
+            foreach (var item in LoadOrder.PriorityOrder.DialogResponses().WinningContextOverrides(LinkCache))
             {
                 if (!IsVictim(item.Record)) continue;
 
-                var response = item.GetOrAddAsOverride(state.PatchMod);
+                var response = item.GetOrAddAsOverride(PatchMod);
 
                 responseCounter++;
 
