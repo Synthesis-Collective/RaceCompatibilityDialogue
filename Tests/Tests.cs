@@ -33,16 +33,16 @@ namespace Tests
             { Skyrim.Race.AlduinRace, false }
         };
 
-        public static readonly TheoryData<CompareOperator, float, bool> BooleanRepresentations = new()
+        public static readonly TheoryData<CompareOperator, float> BooleanRepresentations = new()
         {
-            { CompareOperator.EqualTo, 0f, false },
-            { CompareOperator.LessThanOrEqualTo, 0f, false },
-            { CompareOperator.NotEqualTo, 1f, false },
-            { CompareOperator.LessThan, 1f, false },
-            { CompareOperator.EqualTo, 1f, true },
-            { CompareOperator.GreaterThanOrEqualTo, 1f, true },
-            { CompareOperator.NotEqualTo, 0f, true },
-            { CompareOperator.GreaterThan, 0f, true },
+            { CompareOperator.EqualTo, 0f},
+            { CompareOperator.LessThanOrEqualTo, 0f},
+            { CompareOperator.NotEqualTo, 1f},
+            { CompareOperator.LessThan, 1f },
+            { CompareOperator.EqualTo, 1f },
+            { CompareOperator.GreaterThanOrEqualTo, 1f },
+            { CompareOperator.NotEqualTo, 0f },
+            { CompareOperator.GreaterThan, 0f },
         };
 
         [Theory]
@@ -90,7 +90,7 @@ namespace Tests
 
         [Theory]
         [MemberData(nameof(BooleanRepresentations))]
-        public void TestTargetIsRace(CompareOperator compareOperator, float comparisonValue, bool isTrue)
+        public void TestTargetIsRace(CompareOperator compareOperator, float comparisonValue)
         {
             var dialogResponses = new DialogResponses(FormKey1, SkyrimRelease.SkyrimSE);
 
@@ -107,19 +107,22 @@ namespace Tests
                 }
             });
 
+
+            // !race -> !keyword | !race
+            //  race ->  keyword | race
+
             Program.AdjustResponses(dialogResponses);
+
 
             Assert.Equal(2, dialogResponses.Conditions.Count);
 
-            var newCondition = dialogResponses.Conditions[0];
+            var oldCondition = dialogResponses.Conditions[0];
 
-            // !race -> !keyword && !race
-            // race -> (keyword || race)
+            Assert.True(oldCondition.Flags.HasFlag(Condition.Flag.OR));
 
-            if (isTrue)
-                Assert.False(newCondition.Flags.HasFlag(Condition.Flag.OR));
-            else
-                Assert.True(newCondition.Flags.HasFlag(Condition.Flag.OR));
+            var newCondition = dialogResponses.Conditions[1];
+
+            Assert.False(newCondition.Flags.HasFlag(Condition.Flag.OR));
 
             FunctionConditionData newConditionData = (FunctionConditionData)newCondition.Data;
 
@@ -132,7 +135,7 @@ namespace Tests
 
         [Theory]
         [MemberData(nameof(BooleanRepresentations))]
-        public void TestPlayerIsRace(CompareOperator compareOperator, float comparisonValue, bool isTrue)
+        public void TestPlayerIsRace(CompareOperator compareOperator, float comparisonValue)
         {
             var dialogResponses = new DialogResponses(FormKey1, SkyrimRelease.SkyrimSE);
 
@@ -148,20 +151,19 @@ namespace Tests
             });
 
 
+            // !race -> !race | !keyword
+            //  race ->  race |  keyword
+
             Program.AdjustResponses(dialogResponses);
 
 
             Assert.Equal(2, dialogResponses.Conditions.Count);
 
-            var newCondition = dialogResponses.Conditions[0];
+            var oldCondition = dialogResponses.Conditions[0];
 
-            // !race -> !keyword && !race
-            // race -> (keyword || race)
+            Assert.True(oldCondition.Flags.HasFlag(Condition.Flag.OR));
 
-            if (isTrue)
-                Assert.False(newCondition.Flags.HasFlag(Condition.Flag.OR));
-            else
-                Assert.True(newCondition.Flags.HasFlag(Condition.Flag.OR));
+            var newCondition = dialogResponses.Conditions[1];
 
             FunctionConditionData newConditionData = (FunctionConditionData)newCondition.Data;
 
@@ -176,7 +178,7 @@ namespace Tests
 
         [Theory]
         [MemberData(nameof(BooleanRepresentations))]
-        public void TestRunPatchstate(CompareOperator compareOperator, float comparisonValue, bool isTrue)
+        public void TestRunPatchstate(CompareOperator compareOperator, float comparisonValue)
         {
             var masterMod = new SkyrimMod(masterModKey, SkyrimRelease.SkyrimSE);
 
@@ -212,6 +214,9 @@ namespace Tests
             var program = new Program(loadOrder, linkCache, patchMod);
 
 
+            // !race -> !race | !keyword
+            //  race ->  race |  keyword
+
             program.RunPatch();
 
 
@@ -220,19 +225,12 @@ namespace Tests
 
             Assert.Equal(2, newDialogResponses.Conditions.Count);
 
-            var newCondition = newDialogResponses.Conditions[0];
+            var originalCondition = newDialogResponses.Conditions[0];
+            Assert.True(originalCondition.Flags.HasFlag(Condition.Flag.OR));
 
-            var copiedOldCondition = newDialogResponses.Conditions[1];
+            var newCondition = newDialogResponses.Conditions[1];
 
-            Assert.Equal(oldCondition, copiedOldCondition);
-
-            // !race -> !keyword && !race
-            // race -> (keyword || race)
-
-            if (isTrue)
-                Assert.False(newCondition.Flags.HasFlag(Condition.Flag.OR));
-            else
-                Assert.True(newCondition.Flags.HasFlag(Condition.Flag.OR));
+            Assert.False(newCondition.Flags.HasFlag(Condition.Flag.OR));
 
             FunctionConditionData newConditionData = (FunctionConditionData)newCondition.Data;
 

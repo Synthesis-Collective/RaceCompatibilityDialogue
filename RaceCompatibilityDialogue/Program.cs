@@ -115,67 +115,56 @@ namespace RaceCompatibilityDialogue
 
         public static void AdjustConditions(List<List<Condition>> andList)
         {
-            for (var i = andList.Count - 1; i >= 0; i--)
+            foreach (var orList in andList)
             {
-                var orList = andList[i];
-                // !race -> !keyword & !race
-                // race -> (keyword | race)
+                List<Condition>? newConditions = null;
 
-                // !race | x -> (!keyword | x) & (!race | x)
-                // race | x -> (keyword | race | x)
-                for (var j = orList.Count - 1; j >= 0; j--)
+                foreach (var item in orList)
                 {
-                    if (orList[j] is not ConditionFloat condition) continue;
-
+                    if (item is not ConditionFloat condition) continue;
                     if (!IsBoolean(condition)) continue;
-
                     if (condition.Data is not FunctionConditionData data) continue;
-
                     if (!IsConditionOnPlayerRace(data)) continue;
 
-                    // TODO Support is-x, is-vampire-x in addition to is-x-or-vampire-x (the existing keyword)
-                    //
-                    // current behaviour:
-                    //  * is race X => is actorProxyX or race X
-                    //
-                    // potential solution:
-                    //  * is race X or is race vampireX -> actorProxyX
-                    //  * is race X -> actorProxyX and not Vampire
-                    //  * is race vampireX -> actorProxyX and Vampire
-                    //  
-                    // var vampireKeyword = Skyrim.Keyword.Vampire
-                    // labels: enhancement
+                    var race = data.ParameterOneRecord.Cast<IRaceGetter>();
 
-                    var newCondition = new ConditionFloat();
-                    newCondition.DeepCopyIn(condition, new Condition.TranslationMask(defaultOn: true)
-                    {
-                        Unknown1 = false
-                    });
+                    var newCondition = condition.DeepCopy();
+                    (newConditions ??= new()).Add(newCondition);
 
-                    if (MaybeOr(condition) == true)
-                        newCondition.Flags = condition.Flags | Condition.Flag.OR;
+                    var newData = (FunctionConditionData)newCondition.Data;
 
-                    var newData = new FunctionConditionData
-                    {
-                        Function = Condition.Function.HasKeyword,
-                        ParameterOneRecord = vanillaRaceToActorProxyKeywords[data.ParameterOneRecord.Cast<IRaceGetter>()].AsSetter()
-                    };
-
-                    newData.DeepCopyIn(data, new FunctionConditionData.TranslationMask(defaultOn: true)
-                    {
-                        Function = false,
-                        ParameterOneRecord = false
-                    });
+                    newData.Function = Condition.Function.HasKeyword;
+                    newData.ParameterOneRecord.SetTo(vanillaRaceToActorProxyKeywords[data.ParameterOneRecord.Cast<IRaceGetter>()]);
 
                     if (data.Function is Condition.Function.GetPCIsRace)
                     {
                         newData.RunOnType = Condition.RunOnType.Reference;
                         newData.Reference.SetTo(Constants.Player);
                     }
+                }
 
-                    newCondition.Data = newData;
+                // TODO: Support is-x, is-vampire-x in addition to is-x-or-vampire-x (the existing keyword)
+                //
+                // current behaviour:
+                //  * is race X => is actorProxyX or race X
+                //
+                // potential solution:
+                //  * is race X or is race vampireX -> actorProxyX
+                    //  * is race X -> actorProxyX and not Vampire
+                    //  * is race vampireX -> actorProxyX and Vampire
+                //  
+                    // var vampireKeyword = Skyrim.Keyword.Vampire
+                // labels: enhancement
 
-                    orList.Insert(j, newCondition);
+                if (newConditions != null)
+                {
+                    orList[^1].Flags |= Condition.Flag.OR;
+                    foreach (var newCondition in newConditions)
+                    {
+                        newCondition.Flags |= Condition.Flag.OR;
+                        orList.Add(newCondition);
+                    }
+                    orList[^1].Flags ^= Condition.Flag.OR;
                 }
             }
         }
