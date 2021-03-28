@@ -84,59 +84,99 @@ namespace RaceCompatibilityDialogue
 
         public static void AdjustResponses(IDialogResponses response)
         {
-            for (var i = response.Conditions.Count - 1; i >= 0; i--)
+            var andList = GroupConditions(response.Conditions);
+
+            AdjustConditions(andList);
+
+            response.Conditions.Clear();
+            foreach (var orList in andList)
+                response.Conditions.AddRange(orList);
+        }
+
+        public static List<List<Condition>> GroupConditions(IList<Condition> conditions)
+        {
+            List<List<Condition>> andList = new();
+            List<Condition> orList = new();
+
+            foreach (var condition in conditions)
             {
-                if (response.Conditions[i] is not ConditionFloat condition) continue;
-
-                if (!IsBoolean(condition)) continue;
-
-                if (condition.Data is not FunctionConditionData data) continue;
-
-                if (!IsConditionOnPlayerRace(data)) continue;
-
-                // TODO Support is-x, is-vampire-x in addition to is-x-or-vampire-x (the existing keyword)
-                //
-                // current behaviour:
-                //  * is race X => is race X or actorProxyX
-                //
-                // potential solution:
-                //  * is race X or is race vampireX -> actorProxyX
-                //  * is race X -> actorProxyX and not Vampire
-                //  * is race vampireX -> actorProxyX and Vampire
-                //  
-                // var vampireKeyword = Skyrim.Keyword.Vampire
-                // labels: enhancement
-
-                var newCondition = new ConditionFloat();
-                newCondition.DeepCopyIn(condition, new Condition.TranslationMask(defaultOn: true)
-                {
-                    Unknown1 = false
-                });
-
-                if (MaybeOr(condition) == true)
-                    newCondition.Flags = condition.Flags | Condition.Flag.OR;
-
-                var newData = new FunctionConditionData
-                {
-                    Function = Condition.Function.HasKeyword,
-                    ParameterOneRecord = vanillaRaceToActorProxyKeywords[data.ParameterOneRecord.Cast<IRaceGetter>()].AsSetter()
-                };
-
-                newData.DeepCopyIn(data, new FunctionConditionData.TranslationMask(defaultOn: true)
-                {
-                    Function = false,
-                    ParameterOneRecord = false
-                });
-
-                if (data.Function is Condition.Function.GetPCIsRace)
-                {
-                    newData.RunOnType = Condition.RunOnType.Reference;
-                    newData.Reference.SetTo(Constants.Player);
+                orList.Add(condition);
+                if (!condition.Flags.HasFlag(Condition.Flag.OR)) {
+                    andList.Add(orList);
+                    orList = new();
                 }
+            }
 
-                newCondition.Data = newData;
+            if (orList.Count > 0)
+                andList.Add(orList);
 
-                response.Conditions.Insert(i, newCondition);
+            return andList;
+        }
+
+        public static void AdjustConditions(List<List<Condition>> andList)
+        {
+            for (var i = andList.Count - 1; i >= 0; i--)
+            {
+                var orList = andList[i];
+                // !race -> !keyword && !race
+                // race -> (keyword || race)
+
+                // !race | x -> (!keyword | x) && (!race | x)
+                // race | x -> (keyword || race | x)
+                for (var j = orList.Count - 1; j >= 0; j--)
+                {
+                    if (orList[j] is not ConditionFloat condition) continue;
+
+                    if (!IsBoolean(condition)) continue;
+
+                    if (condition.Data is not FunctionConditionData data) continue;
+
+                    if (!IsConditionOnPlayerRace(data)) continue;
+
+                    // TODO Support is-x, is-vampire-x in addition to is-x-or-vampire-x (the existing keyword)
+                    //
+                    // current behaviour:
+                    //  * is race X => is actorProxyX or race X
+                    //
+                    // potential solution:
+                    //  * is race X or is race vampireX -> actorProxyX
+                    //  * is race X -> actorProxyX and not Vampire
+                    //  * is race vampireX -> actorProxyX and Vampire
+                    //  
+                    // var vampireKeyword = Skyrim.Keyword.Vampire
+                    // labels: enhancement
+
+                    var newCondition = new ConditionFloat();
+                    newCondition.DeepCopyIn(condition, new Condition.TranslationMask(defaultOn: true)
+                    {
+                        Unknown1 = false
+                    });
+
+                    if (MaybeOr(condition) == true)
+                        newCondition.Flags = condition.Flags | Condition.Flag.OR;
+
+                    var newData = new FunctionConditionData
+                    {
+                        Function = Condition.Function.HasKeyword,
+                        ParameterOneRecord = vanillaRaceToActorProxyKeywords[data.ParameterOneRecord.Cast<IRaceGetter>()].AsSetter()
+                    };
+
+                    newData.DeepCopyIn(data, new FunctionConditionData.TranslationMask(defaultOn: true)
+                    {
+                        Function = false,
+                        ParameterOneRecord = false
+                    });
+
+                    if (data.Function is Condition.Function.GetPCIsRace)
+                    {
+                        newData.RunOnType = Condition.RunOnType.Reference;
+                        newData.Reference.SetTo(Constants.Player);
+                    }
+
+                    newCondition.Data = newData;
+
+                    orList.Insert(j, newCondition);
+                }
             }
         }
 
