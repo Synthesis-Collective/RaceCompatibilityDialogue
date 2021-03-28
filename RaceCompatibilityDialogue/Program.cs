@@ -19,7 +19,8 @@ namespace RaceCompatibilityDialogue
                 .Run(args);
         }
 
-        public static readonly Dictionary<IFormLinkGetter<IRaceGetter>, IFormLinkGetter<IKeywordGetter>> vanillaRaceToActorProxyKeywords = new (){
+        public static readonly Dictionary<IFormLinkGetter<IRaceGetter>, IFormLinkGetter<IKeywordGetter>> vanillaRaceToActorProxyKeywords = new()
+        {
             { Skyrim.Race.ArgonianRace, RaceCompatibility.Keyword.ActorProxyArgonian },
             { Skyrim.Race.BretonRace, RaceCompatibility.Keyword.ActorProxyBreton },
             { Skyrim.Race.DarkElfRace, RaceCompatibility.Keyword.ActorProxyDarkElf },
@@ -40,16 +41,34 @@ namespace RaceCompatibilityDialogue
             Condition.Function.GetPCIsRace
         };
 
+        protected readonly LoadOrder<IModListing<ISkyrimModGetter>> LoadOrder;
+        protected readonly ILinkCache<ISkyrimMod, ISkyrimModGetter> LinkCache;
+        protected readonly ISkyrimMod PatchMod;
+
+        public Program(LoadOrder<IModListing<ISkyrimModGetter>> loadOrder, ILinkCache<ISkyrimMod, ISkyrimModGetter> linkCache, ISkyrimMod patchMod)
+        {
+            LoadOrder = loadOrder;
+            LinkCache = linkCache;
+            PatchMod = patchMod;
+        }
+
         public static void RunPatch(IPatcherState<ISkyrimMod, ISkyrimModGetter> state)
+        {
+            var program = new Program(state.LoadOrder, state.LinkCache, state.PatchMod);
+
+            program.RunPatch();
+        }
+
+        public void RunPatch()
         {
             int responseCounter = 0;
             var dialogueSet = new HashSet<IFormLink<IDialogTopicGetter>>();
 
-            foreach (var item in state.LoadOrder.PriorityOrder.DialogResponses().WinningContextOverrides(state.LinkCache))
+            foreach (var item in LoadOrder.PriorityOrder.DialogResponses().WinningContextOverrides(LinkCache))
             {
                 if (!IsVictim(item.Record)) continue;
 
-                var response = item.GetOrAddAsOverride(state.PatchMod);
+                var response = item.GetOrAddAsOverride(PatchMod);
 
                 responseCounter++;
 
@@ -68,6 +87,8 @@ namespace RaceCompatibilityDialogue
             for (var i = response.Conditions.Count - 1; i >= 0; i--)
             {
                 if (response.Conditions[i] is not ConditionFloat condition) continue;
+
+                if (!IsBoolean(condition)) continue;
 
                 if (condition.Data is not FunctionConditionData data) continue;
 
@@ -92,17 +113,8 @@ namespace RaceCompatibilityDialogue
                     Unknown1 = false
                 });
 
-                switch (MaybeOr(condition.CompareOperator, condition.ComparisonValue))
-                {
-                    case true:
-                        newCondition.Flags = condition.Flags | Condition.Flag.OR;
-                        break;
-                    case false:
-                        break;
-                    case null:
-                        Console.WriteLine($"TODO not sure how to handle condition {i} in {formKey2}");
-                        continue;
-                }
+                if (MaybeOr(condition) == true)
+                    newCondition.Flags = condition.Flags | Condition.Flag.OR;
 
                 var newData = new FunctionConditionData
                 {
@@ -128,7 +140,7 @@ namespace RaceCompatibilityDialogue
             }
         }
 
-        private static bool? MaybeOr(CompareOperator op, float val) => (op, val) switch
+        public static bool? MaybeOr(IConditionFloatGetter condition) => (condition.CompareOperator, condition.ComparisonValue) switch
         {
             (CompareOperator.EqualTo, 0) => true,
             (CompareOperator.LessThanOrEqualTo, 0) => true,
@@ -141,6 +153,8 @@ namespace RaceCompatibilityDialogue
             (_, _) => null
         };
 
+        public static bool IsBoolean(IConditionFloatGetter condition) => Enum.IsDefined(condition.CompareOperator) && (condition.ComparisonValue) switch { 0 or 1 => true, _ => false };
+
         public static bool IsConditionOnPlayerRace(IFunctionConditionDataGetter x) => functionsOfInterest.Contains(x.Function)
                 && vanillaRaceToActorProxyKeywords.ContainsKey(x.ParameterOneRecord.Cast<IRaceGetter>());
 
@@ -152,6 +166,7 @@ namespace RaceCompatibilityDialogue
             bool ok = false;
             foreach (var data in x.Conditions
                 .OfType<IConditionFloatGetter>()
+                .Where(x => IsBoolean(x))
                 .Select(x => x.Data)
                 .OfType<IFunctionConditionDataGetter>())
             {
