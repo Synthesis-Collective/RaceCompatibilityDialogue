@@ -13,7 +13,6 @@ namespace Tests
         public static readonly ModKey patchModKey = ModKey.FromNameAndExtension("patch.esp");
 
         public static readonly FormKey FormKey1 = patchModKey.MakeFormKey(0x123456);
-        public static readonly FormKey FormKey2 = patchModKey.MakeFormKey(0x234561);
 
         public static readonly FormLink<IRaceGetter> NordRace = Skyrim.Race.NordRace;
 
@@ -108,7 +107,7 @@ namespace Tests
                 }
             });
 
-            Program.AdjustResponses(FormKey2, dialogResponses);
+            Program.AdjustResponses(dialogResponses);
 
             Assert.Equal(2, dialogResponses.Conditions.Count);
 
@@ -149,7 +148,7 @@ namespace Tests
             });
 
 
-            Program.AdjustResponses(FormKey2, dialogResponses);
+            Program.AdjustResponses(dialogResponses);
 
 
             Assert.Equal(2, dialogResponses.Conditions.Count);

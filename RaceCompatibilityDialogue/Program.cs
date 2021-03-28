@@ -74,7 +74,7 @@ namespace RaceCompatibilityDialogue
 
                 if (item.Parent?.Record is IDialogTopicGetter getter) dialogueSet.Add(getter.AsLink());
 
-                AdjustResponses(item.Record.FormKey, response);
+                AdjustResponses(response);
             }
 
             int dialogueCounter = dialogueSet.Count;
@@ -82,7 +82,7 @@ namespace RaceCompatibilityDialogue
             Console.WriteLine($"Modified {responseCounter} responses to {dialogueCounter} dialogue topics.");
         }
 
-        public static void AdjustResponses(FormKey formKey2, IDialogResponses response)
+        public static void AdjustResponses(IDialogResponses response)
         {
             for (var i = response.Conditions.Count - 1; i >= 0; i--)
             {
