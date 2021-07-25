@@ -6,6 +6,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Mutagen.Bethesda.Plugins;
+using Mutagen.Bethesda.Plugins.Cache;
+using Mutagen.Bethesda.Plugins.Order;
 
 namespace RaceCompatibilityDialogue
 {
@@ -41,11 +44,11 @@ namespace RaceCompatibilityDialogue
             Condition.Function.GetPCIsRace
         };
 
-        protected readonly LoadOrder<IModListing<ISkyrimModGetter>> LoadOrder;
+        protected readonly ILoadOrder<IModListing<ISkyrimModGetter>> LoadOrder;
         protected readonly ILinkCache<ISkyrimMod, ISkyrimModGetter> LinkCache;
         protected readonly ISkyrimMod PatchMod;
 
-        public Program(LoadOrder<IModListing<ISkyrimModGetter>> loadOrder, ILinkCache<ISkyrimMod, ISkyrimModGetter> linkCache, ISkyrimMod patchMod)
+        public Program(ILoadOrder<IModListing<ISkyrimModGetter>> loadOrder, ILinkCache<ISkyrimMod, ISkyrimModGetter> linkCache, ISkyrimMod patchMod)
         {
             LoadOrder = loadOrder;
             LinkCache = linkCache;
