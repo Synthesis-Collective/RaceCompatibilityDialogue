@@ -22,7 +22,7 @@ namespace RaceCompatibilityDialogue
                 .Run(args);
         }
 
-        public static readonly Dictionary<IFormLinkGetter<ISkyrimMajorRecordGetter>, IFormLinkGetter<IKeywordGetter>> vanillaRaceToActorProxyKeywords = new()
+        public static readonly Dictionary<IFormLinkGetter<IRaceGetter>, IFormLinkGetter<IKeywordGetter>> vanillaRaceToActorProxyKeywords = new()
         {
             { Skyrim.Race.ArgonianRace, RaceCompatibility.Keyword.ActorProxyArgonian },
             { Skyrim.Race.BretonRace, RaceCompatibility.Keyword.ActorProxyBreton },
@@ -37,12 +37,6 @@ namespace RaceCompatibilityDialogue
         };
 
         public static readonly HashSet<IFormLinkGetter<IKeywordGetter>> actorProxyKeywords = new(vanillaRaceToActorProxyKeywords.Values);
-
-        public static readonly HashSet<Condition.Function> functionsOfInterest = new()
-        {
-            Condition.Function.GetIsRace,
-            Condition.Function.GetPCIsRace
-        };
 
         protected readonly ILoadOrder<IModListing<ISkyrimModGetter>> LoadOrder;
         protected readonly ILinkCache<ISkyrimMod, ISkyrimModGetter> LinkCache;
@@ -126,10 +120,17 @@ namespace RaceCompatibilityDialogue
                 {
                     if (item is not ConditionFloat condition) continue;
                     if (!IsBoolean(condition)) continue;
-                    if (condition.Data is not FunctionConditionData data) continue;
-                    if (!IsConditionOnPlayerRace(data)) continue;
-
-                    (newConditions ??= new()).Add(MakeNewCondition(condition, data));
+                    
+                    if (condition.Data is GetPCIsRaceConditionData pcIsRaceConditionData)
+                    {
+                        if (!IsConditionOnPlayerRace(pcIsRaceConditionData)) continue;
+                        (newConditions ??= new()).Add(MakeNewCondition(condition, pcIsRaceConditionData));
+                    }
+                    if (condition.Data is GetIsRaceConditionData isRaceConditionData)
+                    {
+                        if (!IsConditionOnPlayerRace(isRaceConditionData)) continue;
+                        (newConditions ??= new()).Add(MakeNewCondition(condition, isRaceConditionData));
+                    }
                 }
 
                 if (newConditions != null)
@@ -142,32 +143,47 @@ namespace RaceCompatibilityDialogue
             }
         }
 
-        private static ConditionFloat MakeNewCondition(ConditionFloat condition, FunctionConditionData data)
+        private static ConditionFloat MakeNewCondition(IConditionFloatGetter condition, IGetIsRaceConditionDataGetter data)
         {
             var newCondition = condition.DeepCopy();
 
-            var newData = (FunctionConditionData)newCondition.Data;
-
-            newData.Function = Condition.Function.HasKeyword;
-
-            newData.ParameterOneRecord.SetTo(vanillaRaceToActorProxyKeywords[data.ParameterOneRecord]);
-
-            if (data.Function is Condition.Function.GetPCIsRace)
+            var newData = new HasKeywordConditionData
             {
-                newData.RunOnType = Condition.RunOnType.Reference;
-                newData.Reference.SetTo(Constants.Player);
-            }
+                RunOnType = Condition.RunOnType.Reference,
+            };
+
+            newData.Keyword.Link.SetTo(vanillaRaceToActorProxyKeywords[data.Race.Link]);
+            newData.Reference.SetTo(data.Reference);
+
+            newCondition.Data = newData;
 
             return newCondition;
         }
 
+        private static ConditionFloat MakeNewCondition(IConditionFloatGetter condition, IGetPCIsRaceConditionDataGetter data)
+        {
+            var newCondition = condition.DeepCopy();
+
+            var newData = new HasKeywordConditionData
+            {
+                RunOnType = Condition.RunOnType.Reference
+            };
+
+            newData.Keyword.Link.SetTo(vanillaRaceToActorProxyKeywords[data.Race.Link]);
+            newData.Reference.SetTo(Constants.Player);
+
+            newCondition.Data = newData;
+
+            return newCondition;
+        }
+
+
         public static bool IsBoolean(IConditionFloatGetter condition) => Enum.IsDefined(condition.CompareOperator) && (condition.ComparisonValue) switch { 0 or 1 => true, _ => false };
 
-        public static bool IsConditionOnPlayerRace(IFunctionConditionDataGetter x) => functionsOfInterest.Contains(x.Function)
-                && vanillaRaceToActorProxyKeywords.ContainsKey(x.ParameterOneRecord);
+        public static bool IsConditionOnPlayerRace(IGetIsRaceConditionDataGetter x) => vanillaRaceToActorProxyKeywords.ContainsKey(x.Race.Link);
+        public static bool IsConditionOnPlayerRace(IGetPCIsRaceConditionDataGetter x) => vanillaRaceToActorProxyKeywords.ContainsKey(x.Race.Link);
 
-        public static bool IsConditionOnPlayerRaceProxyKeyword(IFunctionConditionDataGetter x) => x.Function == Condition.Function.HasKeyword
-                && actorProxyKeywords.Contains(x.ParameterOneRecord);
+        public static bool IsConditionOnPlayerRaceProxyKeyword(IHasKeywordConditionDataGetter x) => actorProxyKeywords.Contains(x.Keyword.Link);
 
         public static bool IsVictim(IDialogResponsesGetter x)
         {
@@ -175,13 +191,18 @@ namespace RaceCompatibilityDialogue
             foreach (var data in x.Conditions
                 .OfType<IConditionFloatGetter>()
                 .Where(x => IsBoolean(x))
-                .Select(x => x.Data)
-                .OfType<IFunctionConditionDataGetter>())
+                .Select(x => x.Data))
             {
-                if (!ok && IsConditionOnPlayerRace(data))
-                    ok = true;
-                if (IsConditionOnPlayerRaceProxyKeyword(data))
-                    return false;
+                if (!ok)
+                {
+                    if (data is IGetIsRaceConditionData foo && IsConditionOnPlayerRace(foo))
+                        ok = true;
+                    else if (data is IGetPCIsRaceConditionData foo2 && IsConditionOnPlayerRace(foo2))
+                        ok = true;
+                }
+                if (data is IHasKeywordConditionData bar)
+                    if (IsConditionOnPlayerRaceProxyKeyword(bar))
+                        return false;
             }
             return ok;
         }

@@ -53,14 +53,13 @@ namespace Tests
         {
             var dialogResponses = new DialogResponses(FormKey1, SkyrimRelease.SkyrimSE);
 
-            dialogResponses.Conditions.Add(new ConditionFloat()
             {
-                Data = new FunctionConditionData()
-                {
-                    Function = Condition.Function.GetIsRace,
-                    ParameterOneRecord = race
-                }
-            });
+                var condition = new ConditionFloat();
+                var conditionData = new GetIsRaceConditionData();
+                condition.Data = conditionData;
+                conditionData.Race.Link.SetTo(race);
+                dialogResponses.Conditions.Add(condition);
+            }
 
             if (!isPlayerRace)
             {
@@ -70,14 +69,13 @@ namespace Tests
 
             Assert.True(Program.IsVictim(dialogResponses));
 
-            dialogResponses.Conditions.Add(new ConditionFloat()
             {
-                Data = new FunctionConditionData()
-                {
-                    Function = Condition.Function.HasKeyword,
-                    ParameterOneRecord = Program.vanillaRaceToActorProxyKeywords[race].AsSetter()
-                }
-            });
+                var condition = new ConditionFloat();
+                var fooData = new HasKeywordConditionData();
+                condition.Data = fooData;
+                fooData.Keyword.Link.SetTo(Program.vanillaRaceToActorProxyKeywords[race]);
+                dialogResponses.Conditions.Add(condition);
+            }
 
             Assert.False(Program.IsVictim(dialogResponses));
         }
@@ -96,19 +94,21 @@ namespace Tests
         {
             var dialogResponses = new DialogResponses(FormKey1, SkyrimRelease.SkyrimSE);
 
-            dialogResponses.Conditions.Add(new ConditionFloat()
             {
-                CompareOperator = compareOperator,
-                ComparisonValue = comparisonValue,
-                Data = new FunctionConditionData()
+                var condition = new ConditionFloat()
                 {
-                    Function = Condition.Function.GetIsRace,
-                    ParameterOneRecord = NordRace,
-                    RunOnType = Condition.RunOnType.Reference,
-                    Reference = Constants.Player.AsSetter()
-                }
-            });
-
+                    CompareOperator = compareOperator,
+                    ComparisonValue = comparisonValue,
+                };
+                dialogResponses.Conditions.Add(condition);
+                var conditionData = new GetIsRaceConditionData()
+                {
+                    RunOnType = Condition.RunOnType.Reference
+                };
+                condition.Data = conditionData;
+                conditionData.Race.Link.SetTo(NordRace);
+                conditionData.Reference.SetTo(Constants.Player);
+            }
 
             // !race -> !keyword | !race
             //  race ->  keyword | race
@@ -126,13 +126,12 @@ namespace Tests
 
             Assert.False(newCondition.Flags.HasFlag(Condition.Flag.OR));
 
-            FunctionConditionData newConditionData = (FunctionConditionData)newCondition.Data;
+            HasKeywordConditionData newConditionData = (HasKeywordConditionData)newCondition.Data;
 
             Assert.NotNull(newConditionData);
 
             Assert.Equal(compareOperator, newCondition.CompareOperator);
-            Assert.Equal(Condition.Function.HasKeyword, newConditionData.Function);
-            Assert.Equal(NordRaceKeyword, newConditionData.ParameterOneRecord);
+            Assert.Equal(NordRaceKeyword.AsNullable(), newConditionData.Keyword.Link);
         }
 
         [Theory]
@@ -141,17 +140,17 @@ namespace Tests
         {
             var dialogResponses = new DialogResponses(FormKey1, SkyrimRelease.SkyrimSE);
 
-            dialogResponses.Conditions.Add(new ConditionFloat()
             {
-                CompareOperator = compareOperator,
-                ComparisonValue = comparisonValue,
-                Data = new FunctionConditionData()
+                var conditionData = new GetPCIsRaceConditionData();
+                conditionData.Race.Link.SetTo(NordRace);
+                var condition = new ConditionFloat()
                 {
-                    Function = Condition.Function.GetPCIsRace,
-                    ParameterOneRecord = NordRace
-                }
-            });
-
+                    CompareOperator = compareOperator,
+                    ComparisonValue = comparisonValue,
+                    Data = conditionData
+                };
+                dialogResponses.Conditions.Add(condition);
+            }
 
             // !race -> !race | !keyword
             //  race ->  race |  keyword
@@ -167,13 +166,12 @@ namespace Tests
 
             var newCondition = dialogResponses.Conditions[1];
 
-            FunctionConditionData newConditionData = (FunctionConditionData)newCondition.Data;
+            HasKeywordConditionData newConditionData = (HasKeywordConditionData)newCondition.Data;
 
             Assert.NotNull(newConditionData);
 
             Assert.Equal(compareOperator, newCondition.CompareOperator);
-            Assert.Equal(Condition.Function.HasKeyword, newConditionData.Function);
-            Assert.Equal(NordRaceKeyword, newConditionData.ParameterOneRecord);
+            Assert.Equal(NordRaceKeyword.AsNullable(), newConditionData.Keyword.Link);
             Assert.Equal(Condition.RunOnType.Reference, newConditionData.RunOnType);
             Assert.Equal(Constants.Player, newConditionData.Reference);
         }
@@ -189,15 +187,13 @@ namespace Tests
             var dialogResponses = new DialogResponses(masterMod, "myResponse");
             dialogTopics.Responses.Add(dialogResponses);
 
+            var getPCIsRaceConditionData = new GetPCIsRaceConditionData();
+            getPCIsRaceConditionData.Race.Link.SetTo(NordRace);
             var oldCondition = new ConditionFloat()
             {
                 CompareOperator = compareOperator,
                 ComparisonValue = comparisonValue,
-                Data = new FunctionConditionData()
-                {
-                    Function = Condition.Function.GetPCIsRace,
-                    ParameterOneRecord = NordRace
-                }
+                Data = getPCIsRaceConditionData
             };
 
             dialogResponses.Conditions.Add(oldCondition);
@@ -234,13 +230,12 @@ namespace Tests
 
             Assert.False(newCondition.Flags.HasFlag(Condition.Flag.OR));
 
-            FunctionConditionData newConditionData = (FunctionConditionData)newCondition.Data;
+            HasKeywordConditionData newConditionData = (HasKeywordConditionData)newCondition.Data;
 
             Assert.NotNull(newConditionData);
 
             Assert.Equal(compareOperator, newCondition.CompareOperator);
-            Assert.Equal(Condition.Function.HasKeyword, newConditionData.Function);
-            Assert.Equal(NordRaceKeyword, newConditionData.ParameterOneRecord);
+            Assert.Equal(NordRaceKeyword.AsNullable(), newConditionData.Keyword.Link);
             Assert.Equal(Condition.RunOnType.Reference, newConditionData.RunOnType);
             Assert.Equal(Constants.Player, newConditionData.Reference);
 
