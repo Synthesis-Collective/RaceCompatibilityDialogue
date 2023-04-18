@@ -69,7 +69,7 @@ namespace RaceCompatibilityDialogue
 
                 responseCounter++;
 
-                if (item.Parent?.Record is IDialogTopicGetter getter) dialogueSet.Add(getter.AsLink());
+                if (item.Parent?.Record is IDialogTopicGetter getter) dialogueSet.Add(getter.ToLink());
 
                 AdjustResponses(response);
             }
