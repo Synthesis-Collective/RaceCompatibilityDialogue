@@ -1,14 +1,14 @@
 using Mutagen.Bethesda;
 using Mutagen.Bethesda.FormKeys.SkyrimSE;
+using Mutagen.Bethesda.Plugins;
+using Mutagen.Bethesda.Plugins.Cache;
+using Mutagen.Bethesda.Plugins.Order;
 using Mutagen.Bethesda.Skyrim;
 using Mutagen.Bethesda.Synthesis;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Mutagen.Bethesda.Plugins;
-using Mutagen.Bethesda.Plugins.Cache;
-using Mutagen.Bethesda.Plugins.Order;
 
 namespace RaceCompatibilityDialogue
 {
@@ -98,7 +98,8 @@ namespace RaceCompatibilityDialogue
             foreach (var condition in conditions)
             {
                 orList.Add(condition);
-                if (!condition.Flags.HasFlag(Condition.Flag.OR)) {
+                if (!condition.Flags.HasFlag(Condition.Flag.OR))
+                {
                     andList.Add(orList);
                     orList = new();
                 }
