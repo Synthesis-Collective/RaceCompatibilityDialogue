@@ -121,17 +121,29 @@ namespace RaceCompatibilityDialogue
                 {
                     if (item is not ConditionFloat condition) continue;
                     if (!IsBoolean(condition)) continue;
-                    
+
+                    IFormLinkNullableGetter<IRaceGetter> targetRace;
+                    IFormLinkGetter<ISkyrimMajorRecordGetter> character;
+
                     if (condition.Data is GetPCIsRaceConditionData pcIsRaceConditionData)
                     {
-                        if (!IsConditionOnPlayerRace(pcIsRaceConditionData)) continue;
-                        (newConditions ??= new()).Add(MakeNewCondition(condition, pcIsRaceConditionData));
+                        targetRace = pcIsRaceConditionData.Race.Link;
+                        character = Constants.Player;
                     }
-                    if (condition.Data is GetIsRaceConditionData isRaceConditionData)
+                    else if (condition.Data is GetIsRaceConditionData isRaceConditionData)
                     {
-                        if (!IsConditionOnPlayerRace(isRaceConditionData)) continue;
-                        (newConditions ??= new()).Add(MakeNewCondition(condition, isRaceConditionData));
+                        targetRace = isRaceConditionData.Race.Link;
+                        character = isRaceConditionData.Reference;
                     }
+                    else
+                    {
+                        continue;
+                    }
+
+                    if (!vanillaRaceToActorProxyKeywords.TryGetValue(targetRace, out var targetRaceKeyword))
+                        continue;
+
+                    (newConditions ??= new()).Add(MakeNewCondition(condition, character, targetRaceKeyword));
                 }
 
                 if (newConditions != null)
@@ -144,40 +156,24 @@ namespace RaceCompatibilityDialogue
             }
         }
 
-        private static ConditionFloat MakeNewCondition(IConditionFloatGetter condition, IGetIsRaceConditionDataGetter data)
+        public static readonly ConditionFloat.TranslationMask newConditionCopyMask = new(true)
         {
-            var newCondition = condition.DeepCopy();
+            Data = false
+        };
 
-            var newData = new HasKeywordConditionData
-            {
-                RunOnType = Condition.RunOnType.Reference,
-            };
+        private static ConditionFloat MakeNewCondition(IConditionFloatGetter condition, IFormLinkGetter<ISkyrimMajorRecordGetter> character, IFormLinkGetter<IKeywordGetter> targetRaceKeyword)
+        {
+            var newCondition = condition.DeepCopy(newConditionCopyMask);
 
-            newData.Keyword.Link.SetTo(vanillaRaceToActorProxyKeywords[data.Race.Link]);
-            newData.Reference.SetTo(data.Reference);
+            var newData = new HasKeywordConditionData();
+            newData.Keyword.Link.SetTo(targetRaceKeyword);
+            newData.Reference.SetTo(character);
+            newData.RunOnType = Condition.RunOnType.Reference;
 
             newCondition.Data = newData;
 
             return newCondition;
         }
-
-        private static ConditionFloat MakeNewCondition(IConditionFloatGetter condition, IGetPCIsRaceConditionDataGetter data)
-        {
-            var newCondition = condition.DeepCopy();
-
-            var newData = new HasKeywordConditionData
-            {
-                RunOnType = Condition.RunOnType.Reference
-            };
-
-            newData.Keyword.Link.SetTo(vanillaRaceToActorProxyKeywords[data.Race.Link]);
-            newData.Reference.SetTo(Constants.Player);
-
-            newCondition.Data = newData;
-
-            return newCondition;
-        }
-
 
         public static bool IsBoolean(IConditionFloatGetter condition) => Enum.IsDefined(condition.CompareOperator) && (condition.ComparisonValue) switch { 0 or 1 => true, _ => false };
 
