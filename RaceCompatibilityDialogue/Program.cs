@@ -178,9 +178,6 @@ namespace RaceCompatibilityDialogue
 
         public static bool IsBoolean(IConditionFloatGetter condition) => Enum.IsDefined(condition.CompareOperator) && (condition.ComparisonValue) switch { 0 or 1 => true, _ => false };
 
-        public static bool IsConditionOnPlayerRace(IGetIsRaceConditionDataGetter x) => vanillaRaceToActorProxyKeywords.ContainsKey(x.Race.Link);
-        public static bool IsConditionOnPlayerRace(IGetPCIsRaceConditionDataGetter x) => vanillaRaceToActorProxyKeywords.ContainsKey(x.Race.Link);
-
         public static bool IsConditionOnPlayerRaceProxyKeyword(IHasKeywordConditionDataGetter x) => actorProxyKeywords.Contains(x.Keyword.Link);
 
         public static bool IsVictim(IDialogResponsesGetter x)
@@ -193,10 +190,10 @@ namespace RaceCompatibilityDialogue
             {
                 if (!ok)
                 {
-                    if (data is IGetIsRaceConditionData foo && IsConditionOnPlayerRace(foo))
-                        ok = true;
-                    else if (data is IGetPCIsRaceConditionData foo2 && IsConditionOnPlayerRace(foo2))
-                        ok = true;
+                    var targetRace = ((data as IGetIsRaceConditionData)?.Race ?? (data as IGetPCIsRaceConditionData)?.Race)?.Link;
+                    if (targetRace is not null)
+                        if (vanillaRaceToActorProxyKeywords.ContainsKey(targetRace))
+                            ok = true;
                 }
                 if (data is IHasKeywordConditionData bar)
                     if (IsConditionOnPlayerRaceProxyKeyword(bar))
