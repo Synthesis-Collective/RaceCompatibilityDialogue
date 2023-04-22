@@ -1,10 +1,10 @@
 using Mutagen.Bethesda;
 using Mutagen.Bethesda.FormKeys.SkyrimSE;
+using Mutagen.Bethesda.Plugins;
+using Mutagen.Bethesda.Plugins.Order;
 using Mutagen.Bethesda.Skyrim;
 using RaceCompatibilityDialogue;
 using System.Linq;
-using Mutagen.Bethesda.Plugins;
-using Mutagen.Bethesda.Plugins.Order;
 using Xunit;
 
 namespace Tests
@@ -206,8 +206,8 @@ namespace Tests
                 var oldCondition = new ConditionFloat()
                 {
                     CompareOperator = compareOperator,
-                ComparisonValue = comparisonValue,
-                Data = getPCIsRaceConditionData
+                    ComparisonValue = comparisonValue,
+                    Data = getPCIsRaceConditionData
                 };
 
                 dialogResponses.Conditions.Add(oldCondition);
@@ -253,7 +253,6 @@ namespace Tests
             Assert.Equal(NordRaceKeyword.AsNullable(), newConditionData.Keyword.Link);
             Assert.Equal(Condition.RunOnType.Reference, newConditionData.RunOnType);
             Assert.Equal(Constants.Player, newConditionData.Reference);
-
         }
 
         [Theory]
