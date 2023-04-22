@@ -5,6 +5,7 @@ using Mutagen.Bethesda.Plugins.Cache;
 using Mutagen.Bethesda.Plugins.Order;
 using Mutagen.Bethesda.Skyrim;
 using Mutagen.Bethesda.Synthesis;
+using Noggog;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -149,8 +150,8 @@ namespace RaceCompatibilityDialogue
                 if (newConditions != null)
                     foreach (var newCondition in newConditions)
                     {
-                        newCondition.Flags &= ~Condition.Flag.OR;
-                        orList[^1].Flags |= Condition.Flag.OR;
+                        newCondition.Flags = newCondition.Flags.SetFlag(Condition.Flag.OR, false);
+                        orList[^1].Flags = orList[^1].Flags.SetFlag(Condition.Flag.OR, true);
                         orList.Add(newCondition);
                     }
             }
