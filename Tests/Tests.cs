@@ -54,10 +54,14 @@ namespace Tests
             var dialogResponses = new DialogResponses(FormKey1, SkyrimRelease.SkyrimSE);
 
             {
-                var condition = new ConditionFloat();
                 var conditionData = new GetIsRaceConditionData();
-                condition.Data = conditionData;
                 conditionData.Race.Link.SetTo(race);
+
+                var condition = new ConditionFloat
+                {
+                    Data = conditionData
+                };
+
                 dialogResponses.Conditions.Add(condition);
             }
 
@@ -70,10 +74,14 @@ namespace Tests
             Assert.True(Program.IsVictim(dialogResponses));
 
             {
-                var condition = new ConditionFloat();
-                var fooData = new HasKeywordConditionData();
-                condition.Data = fooData;
-                fooData.Keyword.Link.SetTo(Program.vanillaRaceToActorProxyKeywords[race]);
+                var conditionData = new HasKeywordConditionData();
+                conditionData.Keyword.Link.SetTo(Program.vanillaRaceToActorProxyKeywords[race]);
+
+                var condition = new ConditionFloat
+                {
+                    Data = conditionData
+                };
+
                 dialogResponses.Conditions.Add(condition);
             }
 
@@ -95,19 +103,21 @@ namespace Tests
             var dialogResponses = new DialogResponses(FormKey1, SkyrimRelease.SkyrimSE);
 
             {
-                var condition = new ConditionFloat()
-                {
-                    CompareOperator = compareOperator,
-                    ComparisonValue = comparisonValue,
-                };
-                dialogResponses.Conditions.Add(condition);
                 var conditionData = new GetIsRaceConditionData()
                 {
                     RunOnType = Condition.RunOnType.Reference
                 };
-                condition.Data = conditionData;
                 conditionData.Race.Link.SetTo(NordRace);
                 conditionData.Reference.SetTo(Constants.Player);
+
+                var condition = new ConditionFloat()
+                {
+                    CompareOperator = compareOperator,
+                    ComparisonValue = comparisonValue,
+                    Data = conditionData
+                };
+
+                dialogResponses.Conditions.Add(condition);
             }
 
             // !race -> !keyword | !race
@@ -143,12 +153,14 @@ namespace Tests
             {
                 var conditionData = new GetPCIsRaceConditionData();
                 conditionData.Race.Link.SetTo(NordRace);
+
                 var condition = new ConditionFloat()
                 {
                     CompareOperator = compareOperator,
                     ComparisonValue = comparisonValue,
                     Data = conditionData
                 };
+
                 dialogResponses.Conditions.Add(condition);
             }
 
@@ -187,16 +199,19 @@ namespace Tests
             var dialogResponses = new DialogResponses(masterMod, "myResponse");
             dialogTopics.Responses.Add(dialogResponses);
 
-            var getPCIsRaceConditionData = new GetPCIsRaceConditionData();
-            getPCIsRaceConditionData.Race.Link.SetTo(NordRace);
-            var oldCondition = new ConditionFloat()
             {
-                CompareOperator = compareOperator,
+                var getPCIsRaceConditionData = new GetPCIsRaceConditionData();
+                getPCIsRaceConditionData.Race.Link.SetTo(NordRace);
+
+                var oldCondition = new ConditionFloat()
+                {
+                    CompareOperator = compareOperator,
                 ComparisonValue = comparisonValue,
                 Data = getPCIsRaceConditionData
-            };
+                };
 
-            dialogResponses.Conditions.Add(oldCondition);
+                dialogResponses.Conditions.Add(oldCondition);
+            }
 
             var patchMod = new SkyrimMod(patchModKey, SkyrimRelease.SkyrimSE);
 
