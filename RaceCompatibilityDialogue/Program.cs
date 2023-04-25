@@ -126,19 +126,18 @@ namespace RaceCompatibilityDialogue
                     IFormLinkNullableGetter<IRaceGetter> targetRace;
                     IFormLinkGetter<ISkyrimMajorRecordGetter> character;
 
-                    if (condition.Data is GetPCIsRaceConditionData pcIsRaceConditionData)
+                    switch (condition.Data)
                     {
-                        targetRace = pcIsRaceConditionData.Race.Link;
-                        character = Constants.Player;
-                    }
-                    else if (condition.Data is GetIsRaceConditionData isRaceConditionData)
-                    {
-                        targetRace = isRaceConditionData.Race.Link;
-                        character = isRaceConditionData.Reference;
-                    }
-                    else
-                    {
-                        continue;
+                        case GetPCIsRaceConditionData pcIsRaceConditionData:
+                            targetRace = pcIsRaceConditionData.Race.Link;
+                            character = Constants.Player;
+                            break;
+                        case GetIsRaceConditionData isRaceConditionData:
+                            targetRace = isRaceConditionData.Race.Link;
+                            character = isRaceConditionData.Reference;
+                            break;
+                        default:
+                            continue;
                     }
 
                     if (!vanillaRaceToActorProxyKeywords.TryGetValue(targetRace, out var targetRaceKeyword))
@@ -190,7 +189,12 @@ namespace RaceCompatibilityDialogue
             {
                 if (!ok)
                 {
-                    var targetRace = ((data as IGetIsRaceConditionData)?.Race ?? (data as IGetPCIsRaceConditionData)?.Race)?.Link;
+                    var targetRace = data switch
+                    {
+                        IGetIsRaceConditionData a => a.Race.Link,
+                        IGetPCIsRaceConditionData b => b.Race.Link,
+                        _ => null
+                    };
                     if (targetRace is not null)
                         if (vanillaRaceToActorProxyKeywords.ContainsKey(targetRace))
                             ok = true;
