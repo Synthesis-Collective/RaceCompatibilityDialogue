@@ -1,14 +1,15 @@
 using Mutagen.Bethesda;
 using Mutagen.Bethesda.FormKeys.SkyrimSE;
+using Mutagen.Bethesda.Plugins;
+using Mutagen.Bethesda.Plugins.Cache;
+using Mutagen.Bethesda.Plugins.Order;
 using Mutagen.Bethesda.Skyrim;
 using Mutagen.Bethesda.Synthesis;
+using Noggog;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Mutagen.Bethesda.Plugins;
-using Mutagen.Bethesda.Plugins.Cache;
-using Mutagen.Bethesda.Plugins.Order;
 
 namespace RaceCompatibilityDialogue
 {
@@ -22,7 +23,7 @@ namespace RaceCompatibilityDialogue
                 .Run(args);
         }
 
-        public static readonly Dictionary<IFormLinkGetter<ISkyrimMajorRecordGetter>, IFormLinkGetter<IKeywordGetter>> vanillaRaceToActorProxyKeywords = new()
+        public static readonly Dictionary<IFormLinkGetter<IRaceGetter>, IFormLinkGetter<IKeywordGetter>> vanillaRaceToActorProxyKeywords = new()
         {
             { Skyrim.Race.ArgonianRace, RaceCompatibility.Keyword.ActorProxyArgonian },
             { Skyrim.Race.BretonRace, RaceCompatibility.Keyword.ActorProxyBreton },
@@ -37,12 +38,6 @@ namespace RaceCompatibilityDialogue
         };
 
         public static readonly HashSet<IFormLinkGetter<IKeywordGetter>> actorProxyKeywords = new(vanillaRaceToActorProxyKeywords.Values);
-
-        public static readonly HashSet<Condition.Function> functionsOfInterest = new()
-        {
-            Condition.Function.GetIsRace,
-            Condition.Function.GetPCIsRace
-        };
 
         protected readonly ILoadOrder<IModListing<ISkyrimModGetter>> LoadOrder;
         protected readonly ILinkCache<ISkyrimMod, ISkyrimModGetter> LinkCache;
@@ -75,7 +70,7 @@ namespace RaceCompatibilityDialogue
 
                 responseCounter++;
 
-                if (item.Parent?.Record is IDialogTopicGetter getter) dialogueSet.Add(getter.AsLink());
+                if (item.Parent?.Record is IDialogTopicGetter getter) dialogueSet.Add(getter.ToLink());
 
                 AdjustResponses(response);
             }
@@ -104,7 +99,8 @@ namespace RaceCompatibilityDialogue
             foreach (var condition in conditions)
             {
                 orList.Add(condition);
-                if (!condition.Flags.HasFlag(Condition.Flag.OR)) {
+                if (!condition.Flags.HasFlag(Condition.Flag.OR))
+                {
                     andList.Add(orList);
                     orList = new();
                 }
@@ -126,48 +122,62 @@ namespace RaceCompatibilityDialogue
                 {
                     if (item is not ConditionFloat condition) continue;
                     if (!IsBoolean(condition)) continue;
-                    if (condition.Data is not FunctionConditionData data) continue;
-                    if (!IsConditionOnPlayerRace(data)) continue;
 
-                    (newConditions ??= new()).Add(MakeNewCondition(condition, data));
+                    IFormLinkNullableGetter<IRaceGetter> targetRace;
+                    IFormLinkGetter<ISkyrimMajorRecordGetter> character;
+
+                    switch (condition.Data)
+                    {
+                        case GetPCIsRaceConditionData pcIsRaceConditionData:
+                            targetRace = pcIsRaceConditionData.Race.Link;
+                            character = Constants.Player;
+                            break;
+                        case GetIsRaceConditionData isRaceConditionData:
+                            targetRace = isRaceConditionData.Race.Link;
+                            character = isRaceConditionData.Reference;
+                            break;
+                        default:
+                            continue;
+                    }
+
+                    if (!vanillaRaceToActorProxyKeywords.TryGetValue(targetRace, out var targetRaceKeyword))
+                        continue;
+
+                    (newConditions ??= new()).Add(MakeNewCondition(condition, character, targetRaceKeyword));
                 }
 
                 if (newConditions != null)
                     foreach (var newCondition in newConditions)
                     {
-                        newCondition.Flags &= ~Condition.Flag.OR;
-                        orList[^1].Flags |= Condition.Flag.OR;
+                        newCondition.Flags = newCondition.Flags.SetFlag(Condition.Flag.OR, false);
+                        orList[^1].Flags = orList[^1].Flags.SetFlag(Condition.Flag.OR, true);
                         orList.Add(newCondition);
                     }
             }
         }
 
-        private static ConditionFloat MakeNewCondition(ConditionFloat condition, FunctionConditionData data)
+        public static readonly ConditionFloat.TranslationMask newConditionCopyMask = new(true)
         {
-            var newCondition = condition.DeepCopy();
+            Data = false
+        };
 
-            var newData = (FunctionConditionData)newCondition.Data;
+        private static ConditionFloat MakeNewCondition(IConditionFloatGetter condition, IFormLinkGetter<ISkyrimMajorRecordGetter> character, IFormLinkGetter<IKeywordGetter> targetRaceKeyword)
+        {
+            var newCondition = condition.DeepCopy(newConditionCopyMask);
 
-            newData.Function = Condition.Function.HasKeyword;
+            var newData = new HasKeywordConditionData();
+            newData.Keyword.Link.SetTo(targetRaceKeyword);
+            newData.Reference.SetTo(character);
+            newData.RunOnType = Condition.RunOnType.Reference;
 
-            newData.ParameterOneRecord.SetTo(vanillaRaceToActorProxyKeywords[data.ParameterOneRecord]);
-
-            if (data.Function is Condition.Function.GetPCIsRace)
-            {
-                newData.RunOnType = Condition.RunOnType.Reference;
-                newData.Reference.SetTo(Constants.Player);
-            }
+            newCondition.Data = newData;
 
             return newCondition;
         }
 
         public static bool IsBoolean(IConditionFloatGetter condition) => Enum.IsDefined(condition.CompareOperator) && (condition.ComparisonValue) switch { 0 or 1 => true, _ => false };
 
-        public static bool IsConditionOnPlayerRace(IFunctionConditionDataGetter x) => functionsOfInterest.Contains(x.Function)
-                && vanillaRaceToActorProxyKeywords.ContainsKey(x.ParameterOneRecord);
-
-        public static bool IsConditionOnPlayerRaceProxyKeyword(IFunctionConditionDataGetter x) => x.Function == Condition.Function.HasKeyword
-                && actorProxyKeywords.Contains(x.ParameterOneRecord);
+        public static bool IsConditionOnPlayerRaceProxyKeyword(IHasKeywordConditionDataGetter x) => actorProxyKeywords.Contains(x.Keyword.Link);
 
         public static bool IsVictim(IDialogResponsesGetter x)
         {
@@ -175,13 +185,23 @@ namespace RaceCompatibilityDialogue
             foreach (var data in x.Conditions
                 .OfType<IConditionFloatGetter>()
                 .Where(x => IsBoolean(x))
-                .Select(x => x.Data)
-                .OfType<IFunctionConditionDataGetter>())
+                .Select(x => x.Data))
             {
-                if (!ok && IsConditionOnPlayerRace(data))
-                    ok = true;
-                if (IsConditionOnPlayerRaceProxyKeyword(data))
-                    return false;
+                if (!ok)
+                {
+                    var targetRace = data switch
+                    {
+                        IGetIsRaceConditionData a => a.Race.Link,
+                        IGetPCIsRaceConditionData b => b.Race.Link,
+                        _ => null
+                    };
+                    if (targetRace is not null)
+                        if (vanillaRaceToActorProxyKeywords.ContainsKey(targetRace))
+                            ok = true;
+                }
+                if (data is IHasKeywordConditionData bar)
+                    if (IsConditionOnPlayerRaceProxyKeyword(bar))
+                        return false;
             }
             return ok;
         }
