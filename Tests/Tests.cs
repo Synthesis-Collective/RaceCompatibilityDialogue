@@ -3,6 +3,7 @@ using Mutagen.Bethesda.FormKeys.SkyrimSE;
 using Mutagen.Bethesda.Plugins;
 using Mutagen.Bethesda.Plugins.Order;
 using Mutagen.Bethesda.Skyrim;
+using Noggog;
 using RaceCompatibilityDialogue;
 using System.Linq;
 using Xunit;
@@ -98,6 +99,32 @@ namespace Tests
 
         [Theory]
         [MemberData(nameof(BooleanRepresentations))]
+        public void IsAlsoNotVictim(CompareOperator compareOperator, float comparisonValue)
+        {
+            var dialogResponses = new DialogResponses(FormKey1, SkyrimRelease.SkyrimSE);
+
+            {
+                var conditionData = new GetIsCrimeFactionConditionData()
+                {
+                    RunOnType = Condition.RunOnType.Subject
+                };
+                conditionData.Faction.Link.SetTo(Skyrim.Faction.AlduinFaction);
+
+                var condition = new ConditionFloat()
+                {
+                    CompareOperator = compareOperator,
+                    ComparisonValue = comparisonValue,
+                    Data = conditionData
+                };
+
+                dialogResponses.Conditions.Add(condition);
+            }
+
+            Assert.False(Program.IsVictim(dialogResponses));
+        }
+
+        [Theory]
+        [MemberData(nameof(BooleanRepresentations))]
         public void TestTargetIsRace(CompareOperator compareOperator, float comparisonValue)
         {
             var dialogResponses = new DialogResponses(FormKey1, SkyrimRelease.SkyrimSE);
@@ -133,6 +160,147 @@ namespace Tests
             Assert.True(oldCondition.Flags.HasFlag(Condition.Flag.OR));
 
             var newCondition = dialogResponses.Conditions[1];
+
+            Assert.False(newCondition.Flags.HasFlag(Condition.Flag.OR));
+
+            HasKeywordConditionData newConditionData = (HasKeywordConditionData)newCondition.Data;
+
+            Assert.NotNull(newConditionData);
+
+            Assert.Equal(compareOperator, newCondition.CompareOperator);
+            Assert.Equal(NordRaceKeyword.AsNullable(), newConditionData.Keyword.Link);
+        }
+
+        [Theory]
+        [MemberData(nameof(BooleanRepresentations))]
+        public void TestDoesNotAdjustNonPlayerRace(CompareOperator compareOperator, float comparisonValue)
+        {
+            var dialogResponses = new DialogResponses(FormKey1, SkyrimRelease.SkyrimSE);
+
+            {
+                var conditionData = new GetIsRaceConditionData()
+                {
+                    RunOnType = Condition.RunOnType.Reference
+                };
+                conditionData.Race.Link.SetTo(NordRace);
+                conditionData.Reference.SetTo(Constants.Player);
+
+                var condition = new ConditionFloat()
+                {
+                    CompareOperator = compareOperator,
+                    ComparisonValue = comparisonValue,
+                    Data = conditionData
+                };
+                condition.Flags = condition.Flags.SetFlag(Condition.Flag.OR, true);
+
+                dialogResponses.Conditions.Add(condition);
+            }
+
+            {
+                var conditionData = new GetIsRaceConditionData()
+                {
+                    RunOnType = Condition.RunOnType.Reference
+                };
+                conditionData.Race.Link.SetTo(Skyrim.Race.AlduinRace);
+                conditionData.Reference.SetTo(Constants.Player);
+
+                var condition = new ConditionFloat()
+                {
+                    CompareOperator = compareOperator,
+                    ComparisonValue = comparisonValue,
+                    Data = conditionData
+                };
+
+                dialogResponses.Conditions.Add(condition);
+            }
+
+            // !race -> !keyword | !race
+            //  race ->  keyword | race
+
+            Program.AdjustResponses(dialogResponses);
+
+
+            Assert.Equal(3, dialogResponses.Conditions.Count);
+
+            var oldCondition1 = dialogResponses.Conditions[0];
+
+            Assert.True(oldCondition1.Flags.HasFlag(Condition.Flag.OR));
+
+            var oldCondition2 = dialogResponses.Conditions[1];
+
+            Assert.True(oldCondition2.Flags.HasFlag(Condition.Flag.OR));
+
+            var newCondition = dialogResponses.Conditions[2];
+
+            Assert.False(newCondition.Flags.HasFlag(Condition.Flag.OR));
+
+            HasKeywordConditionData newConditionData = (HasKeywordConditionData)newCondition.Data;
+
+            Assert.NotNull(newConditionData);
+
+            Assert.Equal(compareOperator, newCondition.CompareOperator);
+            Assert.Equal(NordRaceKeyword.AsNullable(), newConditionData.Keyword.Link);
+        }
+
+        [Theory]
+        [MemberData(nameof(BooleanRepresentations))]
+        public void TestDoesNotAdjustOtherBooleanConditions(CompareOperator compareOperator, float comparisonValue)
+        {
+            var dialogResponses = new DialogResponses(FormKey1, SkyrimRelease.SkyrimSE);
+
+            {
+                var conditionData = new GetIsRaceConditionData()
+                {
+                    RunOnType = Condition.RunOnType.Reference
+                };
+                conditionData.Race.Link.SetTo(NordRace);
+                conditionData.Reference.SetTo(Constants.Player);
+
+                var condition = new ConditionFloat()
+                {
+                    CompareOperator = compareOperator,
+                    ComparisonValue = comparisonValue,
+                    Data = conditionData
+                };
+                condition.Flags = condition.Flags.SetFlag(Condition.Flag.OR, true);
+
+                dialogResponses.Conditions.Add(condition);
+            }
+
+            {
+                var conditionData = new GetIsCrimeFactionConditionData()
+                {
+                    RunOnType = Condition.RunOnType.Subject
+                };
+                conditionData.Faction.Link.SetTo(Skyrim.Faction.AlduinFaction);
+
+                var condition = new ConditionFloat()
+                {
+                    CompareOperator = compareOperator,
+                    ComparisonValue = comparisonValue,
+                    Data = conditionData
+                };
+
+                dialogResponses.Conditions.Add(condition);
+            }
+
+            // !race -> !keyword | !race
+            //  race ->  keyword | race
+
+            Program.AdjustResponses(dialogResponses);
+
+
+            Assert.Equal(3, dialogResponses.Conditions.Count);
+
+            var oldCondition1 = dialogResponses.Conditions[0];
+
+            Assert.True(oldCondition1.Flags.HasFlag(Condition.Flag.OR));
+
+            var oldCondition2 = dialogResponses.Conditions[1];
+
+            Assert.True(oldCondition2.Flags.HasFlag(Condition.Flag.OR));
+
+            var newCondition = dialogResponses.Conditions[2];
 
             Assert.False(newCondition.Flags.HasFlag(Condition.Flag.OR));
 
