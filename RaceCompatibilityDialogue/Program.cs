@@ -167,8 +167,15 @@ namespace RaceCompatibilityDialogue
 
             var newData = new HasKeywordConditionData();
             newData.Keyword.Link.SetTo(targetRaceKeyword);
-            newData.Reference.SetTo(character);
-            newData.RunOnType = Condition.RunOnType.Reference;
+            if (character.IsNull)
+            {
+                newData.RunOnType = Condition.RunOnType.Subject;
+            }
+            else
+            {
+                newData.Reference.SetTo(character);
+                newData.RunOnType = Condition.RunOnType.Reference;
+            }
 
             newCondition.Data = newData;
 
