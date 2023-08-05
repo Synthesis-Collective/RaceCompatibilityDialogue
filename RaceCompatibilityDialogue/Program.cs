@@ -168,7 +168,7 @@ namespace RaceCompatibilityDialogue
             var newData = new HasKeywordConditionData();
             newData.Keyword.Link.SetTo(targetRaceKeyword);
             newData.Reference.SetTo(character);
-            newData.RunOnType = Condition.RunOnType.Reference;
+            newData.RunOnType = character == Constants.Player ? Condition.RunOnType.Reference : condition.Data.RunOnType;
 
             newCondition.Data = newData;
 
